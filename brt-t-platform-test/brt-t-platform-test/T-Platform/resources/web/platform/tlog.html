@@ -1,0 +1,48 @@
+<div class="container">
+    <div class="content">
+        Level :
+        <select class="easyui-combobox" id="loglevel" name="loglevel" style="width:100px;">
+            <option value="TRACE">TRACE</option>
+            <option value="DEBUG">DEBUG</option>
+            <option value="INFO">INFO</option>
+            <option value="WARN">WARN</option>
+            <option value="ERROR">ERROR</option>
+            <option value="FATAL">FATAL</option>
+        </select>
+    </div>
+</div>
+<script type="text/javascript">
+
+function reqLogLevel() {
+	jsonCall("/admin/getLogLevel", "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+        		$.messager.alert('Error', 'send fail');
+        	} else {
+        	    console.log(json.loglevel);
+                $("#loglevel").combobox("select", json.loglevel);
+        	}
+		} else {
+			$.messager.alert('Error', error);
+		}
+	});
+}
+
+reqLogLevel();
+
+function setLogLevel(logLevel) {
+	jsonCall("/admin/setLogLevel/" + logLevel, "GET", null, function(result, json) {
+		if(result) {
+			//alert(json.ret_message);
+		} else {
+			alert(error + "," + status);
+		}
+	});
+}
+
+$("#loglevel").combobox({
+    onChange: function(newValue, oldValue) {
+        setLogLevel(newValue);
+    }
+});
+</script>

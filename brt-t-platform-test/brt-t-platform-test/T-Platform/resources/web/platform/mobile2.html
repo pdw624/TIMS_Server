@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>::::: T-Platform IMP Management :::::</title>
+<!--meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no"-->
+<link rel="shortcut icon" type="image/x-icon" href="/asset/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/black/easyui.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/color.css">
+<style type="text/css">
+html, body {
+   height:100%;
+   margin: 0px 0px 0px 0px;
+   padding: 0;
+   border: none;
+   background: #000;
+   overflow: hidden;
+}
+body { font-family: 'Malgun Gothic', verdana, consolas }
+input {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+div#header{color:#0099FF;font-size:22px;font-weight:bold;text-decoration:none}
+
+a.no-uline:link    { text-decoration:none }
+a.no-uline:visited { text-decoration:none }
+a.no-uline:hover   { text-decoration:none }
+a.no-uline:active  { text-decoration:none }
+
+.modal {
+    position: fixed;
+    z-index: 999;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background-color: Black;
+    filter: alpha(opacity=60);
+    opacity: 0.6;
+    -moz-opacity: 0.8;
+}
+.center {
+    z-index: 1000;
+    margin: 300px auto;
+    padding: 10px;
+    width: 130px;
+    background-color: none ;
+    border-radius: 10px;
+    filter: alpha(opacity=100);
+    opacity: 1;
+    -moz-opacity: 1;
+}
+.center img {
+    height: 128px;
+    width: 128px;
+}
+
+.m-title { color:#ffffff }
+</style>
+
+<script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/jquery.easyui.mobile.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/datagrid-filter.js"></script>
+<script type="text/javascript" src="/asset/js/tplatform.js"></script>
+<script type="text/javascript">
+window.session = { name: null, token: null };
+
+var IMP_PROCESS_LIST = 102;
+
+$(function() {
+    var cookie = readCookie("T-PLATFORM");
+
+    if(cookie) {
+        window.session = JSON.parse(cookie);
+        refreshSession();
+		
+        $('#dlgLogin').dialog('close');
+    }
+});
+
+function rowStyler(index,row) {
+    if (row.sessionIp != "-") {
+        //return 'background-color:#6293BB;color:#fff;font-weight:bold;';
+        return 'color:#ff0;font-weight:bold;';
+    }
+}
+
+function refreshSession() {
+    jsonCall("/imp/getSessionHistory", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdSession").datagrid('loadData', {total:json.total, rows:json.rows});
+		}
+	});
+}
+
+function formatDateTime(val, row) {
+    if(val.length == 14) {
+        var date = val.substring(0, 4) + "-" + val.substring(4, 6) + "-" + val.substring(6, 8);
+        var time = val.substring(8, 10); /* + ":" + val.substring(10, 12) + ":" + val.substring(12, 14);*/
+        return date + " " + time;
+    } else {
+        return val;
+    }
+}
+
+function formatCount(val, row) {
+	return val / 2;
+}
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                createCookie('T-PLATFORM', JSON.stringify(session), 7);
+                $('#dlgLogin').dialog('close');
+
+                refreshSession();
+
+                setTimeout("updateSession()", 5000);
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+}
+</script>
+</head>
+<body>
+<div class="easyui-navpanel">
+    <header>
+        <div class="m-toolbar">
+            <div class="m-title">T-Platform IMP Management V-1.0</div>
+        </div>
+    </header>
+    <table id="grdSession" title="" class="easyui-datagrid"
+           border="false" rownumbers="true" fit="true" pagination="false" fitColumns="true"
+           data-options="singleSelect:true,remoteSort:false,toolbar:'#grdSessionTools'" style="height:100%;">
+        <thead>
+        <tr>
+            <th data-options="field:'sessionId',align:'center',width:80,sortable:true">단말기 ID</th>
+            <th data-options="field:'sessionName',align:'center',width:80,sortable:true">차량번호</th>
+            <th data-options="field:'firstDate',align:'center',width:100, sortable:true" formatter="formatDateTime">최초접속</th>
+			<th data-options="field:'lastDate',align:'center',width:100, sortable:true" formatter="formatDateTime">마지막접속</th>
+			<th data-options="field:'dataCount',align:'center',width:80, sortable:true" formatter="formatCount">접속횟수</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+
+<div id="grdSessionTools">    	
+	<a href="javascript:void(0)" class="easyui-linkbutton c3" iconCls="icon-reload" onclick="window.location.reload()" style="float:right"><span id="sessionInfo">새로고침</span></a>
+</div>
+
+<div id="dlgLogin" class="easyui-dialog" title="Login" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width:350px;height:230px;padding:10px;overflow:hidden">
+    <form id="fff" name="ff" action="/auth/login" method="POST">
+        <div style="padding:0 20px">
+            <div style="margin-bottom:10px">
+                <input class="easyui-textbox" name="username" id="username" data-options="prompt:'Type username',iconCls:'icon-man',required:true" style="width:100%;height:38px">
+            </div>
+            <div>
+                <input class="easyui-passwordbox" name="password" id="password" data-options="prompt:'Type password',required:true" style="width:100%;height:38px">
+            </div>
+            <div style="text-align:center;margin-top:30px">
+                <a href="#" class="easyui-linkbutton" style="width:100%;height:40px" onclick="sign()"><span style="font-size:16px">Login</span></a>
+            </div>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>::::: T-Platform :::::</title>
+<script type="text/javascript" src="/asset/js/jquery.min.js"></script>
+<script type="text/javascript">
+function ftpNotify() {
+   var item = new Object();
+    item.applyDate = "201711100900";
+    item.deviceId = "0000000000";
+    item.deviceType = 2;
+
+    item.fileCode = 1;
+    item.ftpPath = "ftp path";
+    item.ftpFile = "ftp file";
+
+	var jsonData = JSON.stringify(item);
+
+	console.log(jsonData)
+
+	$.ajax({
+        type: "POST",
+        url: "/bis/ftp",
+        contentType: "application/json",
+        dataType: "json",
+		data: jsonData,
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function deviceControl() {
+    var item = new Object();
+	item.deviceId = "B000000001";
+	item.deviceType = 3;
+    item.code = 151;
+    item.value = 2;
+
+	var jsonData = JSON.stringify(item);
+
+	console.log(jsonData)
+
+	$.ajax({
+        type: "POST",
+        url: "/bis/control",
+        contentType: "application/json",
+        dataType: "json",
+		data: jsonData,
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function bitScenario() {
+	var bitItem1 = new Object();
+	bitItem1.order = 1;
+	bitItem1.fileName = "FILE0000001.png";
+	bitItem1.displaySeconds = 10;
+
+	var bitItem2 = new Object();
+	bitItem2.order = 2;
+	bitItem2.fileName = "FILE0000002.png";
+	bitItem2.displaySeconds = 10;
+
+	var bitForm = new Object();
+	bitForm.formType = 1;
+	bitForm.formCount = 2;
+	bitForm.items = [];
+
+    var root = new Object();
+	root.applyDate = "201711030900";
+	root.deviceId = "B000000001";
+	root.count = 1;
+	root.items = [];
+
+	bitForm.items.push(bitItem1);
+	bitForm.items.push(bitItem2);
+
+	root.items.push(bitForm);
+
+	var jsonData = JSON.stringify(root);
+
+	console.log(jsonData)
+
+	$.ajax({
+        type: "POST",
+        url: "/bis/bit/scenario",
+        contentType: "application/json",
+        dataType: "json",
+		data: jsonData,
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function bitMonitor() {
+	var item1 = new Object();
+	item1.startDate = "0101";
+	item1.endDate = "0631";
+	item1.startTime = "0500";
+	item1.endTime = "2300";
+
+	var item2 = new Object();
+	item2.startDate = "0701";
+	item2.endDate = "1231";
+	item2.startTime = "0500";
+	item2.endTime = "2300";
+
+    var root = new Object();
+	root.applyDate = "201711030900";
+	root.deviceId = "B000000001";
+	root.count = 2;
+	root.items = [];
+
+	root.items.push(item1);
+	root.items.push(item2);
+
+	var jsonData = JSON.stringify(root);
+
+	console.log(jsonData)
+
+	$.ajax({
+        type: "POST",
+        url: "/bis/bit/monitor",
+        contentType: "application/json",
+        dataType: "json",
+		data: jsonData,
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function bitIllumination() {
+	var item1 = new Object();
+	item1.startDate = "0101";
+	item1.endDate = "0631";
+	item1.startTime = "0500";
+	item1.endTime = "2300";
+	item1.value = 5;
+
+	var item2 = new Object();
+	item2.startDate = "0701";
+	item2.endDate = "1231";
+	item2.startTime = "0500";
+	item2.endTime = "2300";
+	item2.value = 10;
+
+    var root = new Object();
+	root.applyDate = "201711030900";
+	root.deviceId = "B000000001";
+	root.count = 2;
+	root.items = [];
+
+	root.items.push(item1);
+	root.items.push(item2);
+
+	var jsonData = JSON.stringify(root);
+
+	console.log(jsonData)
+
+	$.ajax({
+        type: "POST",
+        url: "/bis/bit/illumination",
+        contentType: "application/json",
+        dataType: "json",
+		data: jsonData,
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function bisTest(sessionId, cmd) {
+	$.ajax({
+        type: "POST",
+        url: "/bis/test?sessionId="+sessionId+"&cmd="+cmd,
+        contentType: "application/json",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function commandTest(){
+	var sessionId = $("#sessionId").val();
+	var cmd = $("#cmd").val();
+	
+	console.log(sessionId);
+	console.log(cmd);
+	$.ajax({
+        type: "GET",
+        url: "/imp/commandScript?sessionId="+sessionId+"&cmd="+cmd,
+        contentType: "application/json",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+
+function ttest(){
+	$.ajax({
+        type: "GET",
+        url: "/admin/command",
+        contentType: "application/json",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	alert(error + "," + status);
+        },
+        success: function(json) {
+        	alert(json.ret_message);
+        }
+    });
+}
+</script>
+</head>
+<body>
+    <button onclick="ftpNotify()">FTP Notify</button>
+    <button onclick="deviceControl()">Control</button>
+    <button onclick="bitScenario()">BIT Scenario</button>
+    <button onclick="bitMonitor()">BIT Monitor</button>
+    <button onclick="bitIllumination()">BIT Illumination</button>
+    <button onclick="bisTest('B000000001', 2002)">BIT Version</button>
+    <button onclick="bisTest('B000000001', 2004)">BIT Status</button>
+    <div id = "commandTest">
+    <input type="text" id="sessionId" name="sessionIp">
+    <input type="text" id="cmd" name="cmd">
+    <input type="button" value="submit" onclick="commandTest()">
+    </div>
+    <input type="button" value="test" onclick="ttest()">
+</body>
+</html>

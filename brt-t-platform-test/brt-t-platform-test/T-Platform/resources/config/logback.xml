@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>
+				%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36}.%method:%line - %msg%n
+			</Pattern>
+		</layout>
+	</appender>
+
+	<property name="LOG_DIR" value="resources/log" />
+
+	<timestamp key="byDate" datePattern="yyyyMMdd" />
+	<timestamp key="byDate2" datePattern="yyyy-MM-dd" />
+	<timestamp key="byDateTime" datePattern="HH:mm:ss" />
+
+	<!-- SAMPLE
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>resources/log/${byDate}.log</file>
+		<append>true</append>
+		<encoder>
+			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>resources/log/packet.tcp</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>resources/log/packet-%d{yyyy-MM-dd}.%i.tcp</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+					class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>50MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%d{HH:mm:ss} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	-->
+
+	<appender name="EMAIL" class="ch.qos.logback.classic.net.SMTPAppender">
+		<evaluator class="kr.tracom.platform.common.log.TimeBasedEventEvaluator" />
+		<smtpHost>****</smtpHost>
+		<smtpPort>25</smtpPort>
+		<to>****</to>
+		<to>****</to>
+		<from>****</from>
+		<subject>T-Platform-Log: %logger{20} - %m</subject>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>%d{HH:mm:ss.SSS} %-5level => %msg%n</Pattern>
+		</layout>
+	</appender>
+
+	<appender name="PLATFORM" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%d{HH:mm:ss.SSS}] => %msg%n</pattern>
+		</encoder>
+
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/platform.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="HTTP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%d{HH:mm:ss.SSS}] => %msg%n</pattern>
+		</encoder>
+
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/http.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="BIS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%d{HH:mm:ss.SSS}] [%-5level] => %msg%n</pattern>
+		</encoder>
+
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/bis.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+	</appender>
+	
+	<appender name="BRT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%d{HH:mm:ss.SSS}] [%-5level] => %msg%n</pattern>
+		</encoder>
+
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/brt.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="PACKET" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%d{HH:mm:ss.SSS}] => %msg%n</pattern>
+		</encoder>
+
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- rollover daily -->
+			<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/packet.log</fileNamePattern>
+			<maxHistory>7</maxHistory>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+		<discriminator>
+			<key>sessionid</key>
+			<defaultValue>unknown</defaultValue>
+		</discriminator>
+		<sift>
+			<appender name="FILE-${sessionid}" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<encoder>
+					<pattern>[%d{HH:mm:ss.SSS}] - %msg%n</pattern>
+				</encoder>
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<!-- rollover daily -->
+					<fileNamePattern>${LOG_DIR}/%d{yyyy-MM-dd}/${sessionid}.log</fileNamePattern>
+					<maxHistory>7</maxHistory>
+				</rollingPolicy>
+			</appender>
+		</sift>
+	</appender>
+
+	<logger name="kr.tracom.platform.tcp.cs" level="debug" additivity="false">
+		<appender-ref ref="PACKET" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.http" level="info" additivity="false">
+		<appender-ref ref="HTTP" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.channel" level="debug" additivity="false">
+		<appender-ref ref="PLATFORM" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.channel.handler" level="debug" additivity="false">
+		<appender-ref ref="PLATFORM" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.job" level="debug" additivity="false">
+		<appender-ref ref="PLATFORM" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.manager" level="debug" additivity="false">
+		<appender-ref ref="PLATFORM" />
+	</logger>
+
+	<logger name="kr.tracom.platform.launcher.module" level="debug" additivity="false">
+		<appender-ref ref="PLATFORM" />
+	</logger>
+
+	<logger name="kr.tracom.platform.bis" level="debug" additivity="false">
+		<appender-ref ref="BIS" />
+	</logger>
+	
+	<logger name="kr.tracom.platform.brt" level="debug" additivity="false">
+		<appender-ref ref="BRT"/>
+	</logger>
+	
+	<logger name="kr.tracom" level="info" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	
+	<logger name="kr.tracom.platform.tcp" level="debug" additivity="false">
+		<appender-ref ref="PACKET" />
+	</logger>
+
+	<logger name="kr.tracom.platform.service.manager.PacketLogManager" level="debug" additivity="false">
+		<appender-ref ref="SIFT" />
+	</logger>
+
+	<logger name="io.netty" level="info" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	
+	<logger name="org.apache.ibatis" level="error" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	
+	<logger name="org.mybatis" level="error" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+	
+	<logger name="org.reflections" level="error" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+    <!-- Query Loggers -->
+    <logger name="jdbc.sqlonly" additivity="false"> 
+        <level value="INFO"/>
+        <appender-ref ref="CONSOLE"/> 
+    </logger>
+     
+    <logger name="jdbc.resultsettable" additivity="false"> 
+        <level value="INFO"/> 
+        <appender-ref ref="CONSOLE"/> 
+    </logger>
+
+	<logger name="com.sun.jersey.api.container.filter.LoggingFilter" level="info" additivity="false">
+		<appender-ref ref="CONSOLE" />
+	</logger>
+
+	<root level="info">
+		<appender-ref ref="CONSOLE" />
+	</root>
+		
+</configuration>

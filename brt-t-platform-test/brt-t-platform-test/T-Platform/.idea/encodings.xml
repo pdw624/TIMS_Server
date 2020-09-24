@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-Bis" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-Common" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-Database" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-FileDB" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-ImpAdmin" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-Launcher" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-OpenApi" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-Service" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-TimsAttribute" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-TimsNet" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/T-TimsTcp" charset="UTF-8" />
+  </component>
+</project>

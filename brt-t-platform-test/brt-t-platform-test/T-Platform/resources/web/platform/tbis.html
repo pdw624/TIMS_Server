@@ -1,0 +1,50 @@
+<script type="text/javascript">
+
+</script>
+<div class="container">
+    <div class="content">
+        <table width="100%">
+            <tr>
+                <td>Master</td>
+                <td>
+                    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="masterDb('buildDB')">Build</a>
+                    <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-reload'" onclick="masterDb('loadDB')">Load</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Version</td>
+                <td><a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'" onclick="getRequest(3,'0000000000', 2002)">Get-Request</a><br></td>
+            </tr>
+            <tr>
+                <td>Status</td>
+                <td><a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'" onclick="getRequest(3,'0000000000', 2004)">Get-Request</a><br></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+function masterDb(cmd) {
+	jsonCall("/master/" + cmd, "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+                $.messager.alert('Error', json.ret_message);
+            } else {
+        	    $.messager.alert('Ok', json.ret_message);
+        	}
+		} else {
+			$.messager.alert('Warning', error);
+		}
+	});
+}
+
+function getRequest(deviceType, sessionId, attrId) {
+	jsonCall("/bis/getRequest/"+deviceType+"/"+sessionId+"/"+attrId, "POST", null, function(result, json) {
+		if(result) {
+			alert(json.ret_message);
+		} else {
+			alert(error + "," + status);
+		}
+	});
+}
+</script>

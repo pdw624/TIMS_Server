@@ -1,0 +1,22 @@
+<div class="container">
+    <div class="content">
+        used : <span id="dbUsed"></span> / total : <span id="dbTotal"></span>
+    </div>
+</div>
+<script type="text/javascript">
+function reqStatusDB() {
+	jsonCall("/admin/dbStatus", "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+        		$.messager.alert('Error', 'send fail');
+        	} else {
+                $('#dbUsed').text(json.used);
+                $('#dbTotal').text(json.total);
+        	}
+		} else {
+			$.messager.alert('Error', error);
+		}
+	});
+}
+reqStatusDB();
+</script>

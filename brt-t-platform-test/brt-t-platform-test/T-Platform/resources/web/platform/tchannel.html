@@ -1,0 +1,42 @@
+
+<table id="grdSession" class="easyui-datagrid" data-options="rownumbers:true, fitColumns:true, border: false, singleSelect: true">
+    <thead>
+    <tr>
+        <th field="sessionId" align="center">Client ID</th>
+        <th field="sessionIp" align="center">Client IP</th>
+        <th field="loginDateTime" align="center">Login Date</th>
+    </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+var tmrID = -1;
+
+function stopTimer() {
+	if(tmrID != -1) {
+		clearTimeout(tmrID);
+	}
+}
+
+function runTimer() {
+    reqSession();
+}
+
+function reqSession() {
+	jsonCall("/admin/session", "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+        		$.messager.alert('Error', 'send fail');
+        	} else {
+        		$("#grdSession").datagrid('loadData', {total:json.total, rows:json.rows});
+
+	            //tmrID = setTimeout(runTimer, 10 * 1000);
+        	}
+		} else {
+			$.messager.alert('Error', error);
+		}
+	});
+}
+
+runTimer();
+</script>

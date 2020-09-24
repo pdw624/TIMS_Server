@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="Bis">
+	<insert id="insertGps" parameterType="HashMap">
+		INSERT INTO BIS_HT_GPS	 (
+		    CL_DT, IMP_ID,  
+		    LAT, LON, SPEED, HEADING, SYS_DT
+		) VALUES (
+			#{CL_DT},
+		    #{IMP_ID},
+		    #{LAT},
+		    #{LON},
+		    #{SPEED},
+		    #{HEADING},
+		    NOW()
+		)
+	</insert>
+
+	<insert id="insertBusEvent" parameterType="HashMap">
+		INSERT INTO BIS_HT_BUS_EVENT	 (
+			GPS_DTM, BUS_ID, ROUTE_ID, EVENT_CD, EVENT_DATA, EVENT_SEQ,
+			LAT, LON, HEADING, STOP_TM, SYS_DT
+		) VALUES (
+			#{GPS_DTM},
+			#{BUS_ID},
+			#{ROUTE_ID},
+			#{EVENT_CD},
+			#{EVENT_DATA},
+			#{EVENT_SEQ},
+			#{LAT},
+			#{LON},
+			#{HEADING},
+			#{STOP_TM},
+			NOW()
+		)
+	</insert>
+</mapper>

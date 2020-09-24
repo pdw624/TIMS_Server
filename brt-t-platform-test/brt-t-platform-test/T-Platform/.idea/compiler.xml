@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="T-ApiServer" />
+        <module name="T-Bis" />
+        <module name="T-Common" />
+        <module name="T-Database" />
+        <module name="T-FileDB" />
+        <module name="T-ImpAdmin" />
+        <module name="T-Launcher" />
+        <module name="T-MasterDB" />
+        <module name="T-MasterFile" />
+        <module name="T-MasterFileGenerator" />
+        <module name="T-OpenApi" />
+        <module name="T-Service" />
+        <module name="T-TimsAttribute" />
+        <module name="T-TimsData" />
+        <module name="T-TimsNet" />
+        <module name="T-TimsTcp" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="T-ApiServer" target="1.8" />
+      <module name="T-Bis" target="1.8" />
+      <module name="T-Common" target="1.8" />
+      <module name="T-Database" target="1.8" />
+      <module name="T-FileDB" target="1.8" />
+      <module name="T-FileTransfer" target="1.8" />
+      <module name="T-ImpAdmin" target="1.8" />
+      <module name="T-Launcher" target="1.8" />
+      <module name="T-MasterDB" target="1.8" />
+      <module name="T-MasterFile" target="1.8" />
+      <module name="T-MasterFileGenerator" target="1.8" />
+      <module name="T-OpenApi" target="1.8" />
+      <module name="T-OpenWeb" target="1.8" />
+      <module name="T-Platform" target="1.8" />
+      <module name="T-Service" target="1.8" />
+      <module name="T-TimsAttribute" target="1.8" />
+      <module name="T-TimsData" target="1.8" />
+      <module name="T-TimsNet" target="1.8" />
+      <module name="T-TimsTcp" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

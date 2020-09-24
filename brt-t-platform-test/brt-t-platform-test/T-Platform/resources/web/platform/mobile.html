@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>::::: T-Platform IMP Management :::::</title>
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="shortcut icon" type="image/x-icon" href="/asset/img/favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/black/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/color.css">
+    <style type="text/css">
+html, body{
+   height:100%;
+   margin: 0px 0px 0px 0px;
+   padding: 0;
+   border: none;
+   background: #000;
+   overflow: hidden;
+  }
+   
+   
+}
+body { font-family: 'Malgun Gothic', verdana, consolas }
+input {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+div#header{color:red;font-size:22px;font-weight:bold;text-decoration:none}
+
+a.no-uline:link    { text-decoration:none }
+a.no-uline:visited { text-decoration:none }
+a.no-uline:hover   { text-decoration:none }
+a.no-uline:active  { text-decoration:none }
+
+.modal {
+    position: fixed;
+    z-index: 999;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background-color: Black;
+    filter: alpha(opacity=60);
+    opacity: 0.6;
+    -moz-opacity: 0.8;
+}
+.center {
+    z-index: 1000;
+    margin: 300px auto;
+    padding: 10px;
+    width: 130px;
+    background-color: none ;
+    border-radius: 10px;
+    filter: alpha(opacity=100);
+    opacity: 1;
+    -moz-opacity: 1;
+}
+.center img {
+    height: 128px;
+    width: 128px;
+}
+
+.m-title { color:#ffffff }
+#region , #community{
+	width : 86px;
+/* 	height : 400px; */
+/* 	readonly : false; */
+
+}
+
+#grdSessionTools{
+	font-size: 10px;
+}
+#grdSessionTools_table{
+/* 	margin-left: auto; 
+	margin-right: auto; */
+	margin: 0 auto;
+	
+}
+#grdSession{
+	fixed : false;
+}
+
+/* .datagrid-cell{
+    font-size:20px;
+    height: 250px;
+  } */
+
+
+</style>
+    <script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+    <script type="text/javascript" src="/asset/js/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/asset/js/easyui/jquery.easyui.mobile.js"></script>
+    <script type="text/javascript" src="/asset/js/easyui/datagrid-filter.js"></script>
+    <script type="text/javascript" src="/asset/js/tplatform.js"></script>
+    <script type="text/javascript">
+   
+window.session = { name: null, token: null };
+
+var IMP_PROCESS_LIST = 102;
+
+$(function() {
+	
+	$('.panel-header').css('background-image', 'linear-gradient(to bottom,#698cba 0,#577eb2 100%)');
+    var cookie = readCookie("T-PLATFORM");
+
+    if(cookie) {
+        window.session = JSON.parse(cookie);
+        refreshSession();
+        setTimeout("updateSession()", 5000);
+        $('#dlgLogin').dialog('close');
+    }
+    
+    $('#grdSession').datagrid({
+        selectOnCheck: true,
+        checkOnSelect: true,
+    	onClickRow : function(rowIndex, rowData) {//리스트에 한 줄 클릭했을 때 실행되는 이벤트
+    		var rowData = $('#grdSession').datagrid('getSelected');
+
+     			$(".panel-title.panel-with-icon").text(rowData.sessionName + " | " + rowData.sessionId + " | " + rowData.localNumber);
+     				
+    		/*
+            if (rowData && rowData.sessionIp != "-") {
+                var attrId = getAttributeId();
+                $('#grdProcess').datagrid('loadData', {"total":0,"rows":[]});
+                getRequest(rowData.sessionId, attrId);
+            }
+    		*/
+    		if (rowData) {
+    			getVersion(rowData.sessionId);
+    		}//차랑한대 클릭했을때 상세정보
+        },
+        onRowContextMenu:function(e){//마우스 우클릭했을 경우 이벤트
+        	e.preventDefault();
+
+        	$('#imp_menu').menu('show', {
+    			left: e.pageX,
+    			top: e.pageY
+    		});
+    	}//onRowContextMenu end
+    	//20190221_onClickCell_change cell content DB ver/App ver by hmp 
+    });
+    /*
+    $.ajaxSetup({
+         beforeSend: function () { $(".modal").show(); }
+        ,complete:  function () { $(".modal").hide(); }
+    });
+    */
+     var dg = $('#grdSession').datagrid();
+     dg.datagrid('enableFilter'); //filter을 사용하기 위한 option 
+
+     /*접속여부 필터링 by hmp*/
+     	$('#connectfilter').combobox({
+				data : [{value:'ALL',text:'전체', selected : true}, {value:'.',text:'접속'}, {value:'-',text:'미접속'}],
+				valueField : 'value', //data 속성에서 value 값
+				textField : 'text', //data 속성에서 text 값
+	            onChange:function(value , oldValue){
+	                if (value == 'ALL'){
+	                    dg.datagrid('removeFilterRule', 'sessionIp');
+	                }else if(value == '.'){
+	                	dg.datagrid('removeFilterRule', 'sessionIp');
+	                    dg.datagrid('addFilterRule', {
+	                        field: 'sessionIp',
+	                        op: 'contains',
+	                        value: value
+	                    });
+	                 }else if(value == '-'){ //data의 value와 비교되는대상
+	                	dg.datagrid('removeFilterRule', 'sessionIp');
+	                    dg.datagrid('addFilterRule', {
+	                        field: 'sessionIp',
+	                        op: 'equal',
+	                        value: value
+	                    });
+	                }
+	                updateSession();
+	                dg.datagrid('doFilter');
+	            }//onchange
+	           
+			});//connectfilter combobox end
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+     
+			
+	  	$('#region').combobox({
+			valueField : 'id',
+			textField : 'text',
+			url : encodeURI('../asset/json/region.json'),
+			onSelect : function(rec){
+				dg.datagrid('removeFilterRule', 'compName');
+				if(rec.id == 'All'){
+					dg.datagrid('removeFilterRule', 'localNumber');
+				}//all
+				else{
+					dg.datagrid('removeFilterRule', 'localNumber');
+					dg.datagrid('addFilterRule', {
+						field : 'localNumber',
+						op : 'contains',
+						value : rec.localNumber
+					});
+				}//else
+				dg.datagrid('doFilter');
+				updateSession();
+			
+			$('#community').combobox({
+				data : rec.comp_list,
+				valueField : 'comp',
+				textField : 'comp',
+				onChange:function(comp){
+					if(comp == '전체'){
+						dg.datagrid('removeFilterRule', 'compName');
+					}//if
+					else{
+						dg.datagrid('removeFilterRule', 'compName');
+						dg.datagrid('addFilterRule', {
+							field : 'compName',
+							op : 'equal',
+							value : comp
+						});
+					}				
+					dg.datagrid('doFilter');
+					updateSession();
+				}//onchange
+			});//community
+		}
+ 	
+    	
+  	
+	});//region combobox by jh
+		    
+  
+}); //Function end
+
+/* function cellStyler(value,row,index){
+    if (value == "-"){
+        //return 'background-color:#ffee00;color:red;';
+        return 'color:red;';
+    }
+}
+ */
+ 
+/*  ($.fn.draggable.isDragging||$.fn.resizable.isResizing){
+		e.preventDefault();
+ */	
+ 
+
+ 
+function rowStyler(index,row) {
+ 
+    if (row.sessionIp != "-") {
+        //return 'background-color:#6293BB;color:#fff;font-weight:bold;';
+        return 'color:#ff0;font-weight:bold;';
+    }
+}
+
+function refreshSession() {
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+			
+		    $("#grdSession").datagrid('loadData', {total:json.total, rows:json.rows});
+		}
+	});
+}
+//Session 업데이트
+function updateSession() {
+    var grdData = $("#grdSession").datagrid("getData");
+    //1차 추가 0305
+    //var dg = $('#grdSession').datagrid();
+    //1차 추가 0305
+    //dg.datagrid('doFilter');
+    
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+		    var grdData = $("#grdSession").datagrid("getData").rows;//이벤트 실행됬을때마다 row 값 가져오기.
+		    
+            var newData = json.rows;
+            var grdRow, newRow;
+			var connectedCount = 0;
+			
+            for (var grdKey in grdData) {
+                grdRow = grdData[grdKey];
+
+                /*
+                newRow = newData[grdKey];
+                if(grdRow.sessionId == newRow.sessionId) {
+                    if(grdRow.sessionIp != newRow.sessionIp) {
+                        grdRow.sessionIp = newRow.sessionIp;
+
+                        $('#grdSession').datagrid('refreshRow', grdKey);
+                    }
+                }
+                */
+
+                for (var newKey in newData) {
+                    newRow = newData[newKey];
+                    if(grdRow.sessionId == newRow.sessionId) {
+                        if(grdRow.sessionIp != newRow.sessionIp) {
+                            grdRow.sessionIp = newRow.sessionIp;
+
+                           //0305 주석처리 $('#grdSession').datagrid('refreshRow', grdKey);
+                        }
+                        break;
+                    }
+                }
+
+				if(grdRow.sessionIp != "-") {
+					connectedCount++;
+				}
+            }
+            var total = grdData.length;
+            viewInfo(total, connectedCount);
+			//viewInfo(json.total, connectedCount);
+		// setTimeout("updateSession()", 5000); //setTmeout을 사용할 필요는 없음. => 현재 reload가 되고 있지 않음. 
+		}
+	});
+ 
+}
+
+function viewInfo(total, connected) {
+	/* $("#sessionInfo").html("갱신 시간 : " + getTimeStamp() + ", 총 : " + total + ", 접속 : " + connected); */
+	//현재 내가 선택한 결과에 대한 전체 값.
+
+	$("#sessionInfo").html("접속률 : " + connected + " / " + total);
+	/* $("#sessionInfo").html("총 접속률 : " + connected + " / " + count); */
+}
+
+function formatDateTime(val, row) {
+	if(val && val.length == 16) {
+		var date = val.substring(0, 4) + "-" + val.substring(4, 6) + "-" + val.substring(6, 8);
+		var time = val.substring(8, 10) + ":" + val.substring(10, 12); /* + ":" + val.substring(12, 14); */
+
+		return date + " " + time;
+	} else {
+		return val;
+	}
+}
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                createCookie('T-PLATFORM', JSON.stringify(session), 7);
+                $('#dlgLogin').dialog('close');
+
+                refreshSession();
+
+                setTimeout("updateSession()", 5000);
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+}
+
+
+function getVersion(sessionId) {//해당차량에 대한 상세정보 가져오기	
+    jsonCall("/imp/getVersion/"+sessionId, "GET", "", function(result, json){
+		if(result) {
+			//alert("result="+result);
+		    $("#grdVersion").datagrid('loadData', {total:json.total, rows:json.rows});		    
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}//getVersion end
+
+function getRequest(sessionId, attrId) {
+    jsonCall("/imp/getRequest/"+sessionId+"/"+attrId, "GET", "", function(result, json){
+		if(result) {
+		    $("#grdProcess").datagrid('loadData', {total:json.total, rows:json.rows});
+		    
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+
+function getTimeStamp() {
+  var d = new Date();
+  var s =
+    leadingZeros(d.getFullYear(), 4) + '-' +
+    leadingZeros(d.getMonth() + 1, 2) + '-' +
+    leadingZeros(d.getDate(), 2) + ' ' +
+
+    leadingZeros(d.getHours(), 2) + ':' +
+    leadingZeros(d.getMinutes(), 2) + ':' +
+    leadingZeros(d.getSeconds(), 2);
+
+  return s;
+}
+
+function leadingZeros(n, digits) {
+  var zero = '';
+  n = n.toString();
+
+  if (n.length < digits) {
+    for (i = 0; i < digits - n.length; i++)
+      zero += '0';
+  }
+  return zero + n;
+}
+
+function formatField(value){
+	return '<span style="font-size:19px;height:150px;">'+value+'</span>';
+}
+$('#dg').datagrid({
+  columns:[[
+    {field:'name',title:'Name',width:100,formatter:formatField}
+  ]]
+});
+
+</script>
+</head>
+<body>
+	
+	<div class="easyui-layout" style="width:auto;height:100%;">
+		<!-- Vehicle List Table start -->
+	   	<div data-options="region:'center'" style="width:100%;height:100%;overflow:hidden">
+		   <table id="grdSession" title="" class="easyui-datagrid"
+		           border="false" rownumbers="true" fit="true" pagination="false" fitColumns="true"
+		           data-options=" singleSelect:true,remoteSort:false,toolbar:'#grdSessionTools',rowStyler:rowStyler" style="height:100%;">
+		        <thead data-options="frozen:true">
+		        <tr>
+		            <th data-options="field:'sessionName',align:'left',sortable:true, resizable:false" width="auto" formatter="formatField">차량번호</th>
+		        </thead>
+		        <thead>
+		            <th data-options="field:'dbVersion', align:'left', resizable:false" width="auto" formatter="formatField">DB Ver</th>
+		           	<th data-options="field:'appVersion', align:'left', resizable:false" width="auto" formatter="formatField">App Ver</th>
+		
+		        </tr>
+		        </thead>
+		   </table> 
+	    </div>
+		<!-- Vehicle List Table end -->
+		
+		<!-- IMP Information start -->		
+		 	<div id="pnlInfo" data-options="title: '프로세스 정보', headerCls:'easyui-linkbutton c8', region:'south', iconCls:'icon-ok', hideCollapsedContent:false,collapsed:true" style="width:100%;height:70%;overflow:hidden;">
+		             <table id="grdVersion" class="easyui-datagrid" fit="true" fitColumns="true" data-options="rownumbers:true,singleSelect:true" style="width:100%;height:100%;overflow:hidden">
+		   
+		                   <thead>
+		                        <tr>
+									<th data-options="field:'processName',align:'left',resizable:false"width="auto">Process Name</th>
+									<th data-options="field:'startTime',align:'center',resizable:false"width="auto" formatter="formatDateTime">Start Time</th>
+									<th data-options="field:'lastRunTime',align:'center',resizable:false"width="auto" formatter="formatDateTime">Last Time</th>
+									<th data-options="field:'versionHigh',align:'center',resizable:false"width="auto">Ver.High</th>
+									<th data-options="field:'versionMiddle',align:'center',resizable:false"width="auto">Ver.Middle</th>
+									<th data-options="field:'versionLow',align:'center',resizable:false"width="auto">Ver.Low</th>             
+		                        </tr>
+		                   </thead>
+		            </table>
+			</div>
+		<!-- IMP Information end -->
+		
+		</div><!-- easyui-layout 100% -->
+		
+	<!-- 지역, 운수사, 접속여부, 접속률 start -->
+	<div id="grdSessionTools">
+		<table id="grdSessionTools_table">
+			<tr style="width : 200px;">
+				<th style="width: 45px;">지  역</th>
+				<td><input id="region" class="easyui-combobox" data-options="editable:false, width : 100"></td>
+				<th style="width: 50px; text-align: right;">운수사</th>
+				<td style="width: 100px; text-align: right;"><input id = "community" class = "easyui-combobox" data-options = "editable:false, width : 100" ></td>
+			</tr>
+			<tr style="width : 200px;">
+				<th>접속여부</th> 
+				<!-- <td><input id="connectfilter" class="easyui-combobox" data-options="field:'sessionIp',align:'center',width:90, sortable:true ,editable:false"></td> -->
+				<td><input id="connectfilter" class="easyui-combobox" data-options="width:100, sortable:true ,editable:false"></td>
+				<td colspan="2" style="width: 200px;"><a href="javascript:void(0)" class="easyui-linkbutton c3" iconCls="icon-reload" onclick="updateSession()" style="float:right"><span id="sessionInfo">새로고침</span></a></td>
+			</tr>
+		</table>		
+	</div>
+	<!-- 지역, 운수사, 접속여부, 접속률 end -->
+	
+	<div id="dlgLogin" class="easyui-dialog" title="Login" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width:350px;height:230px;padding:10px;overflow:hidden">
+	    <form id="fff" name="ff" action="/auth/login" method="POST">
+	        <div style="padding:0 20px">
+	            <div style="margin-bottom:10px">
+	                <input class="easyui-textbox" name="username" id="username" data-options="prompt:'Type username',iconCls:'icon-man',required:true" style="width:100%;height:38px">
+	            </div>
+	            <div>
+	                <input class="easyui-passwordbox" name="password" id="password" data-options="prompt:'Type password',required:true" style="width:100%;height:38px">
+	            </div>
+	            <div style="text-align:center;margin-top:30px">
+	                <a href="#" class="easyui-linkbutton" style="width:100%;height:40px" onclick="sign()"><span style="font-size:16px">Login</span></a>
+	            </div>
+	        </div>
+	    </form>
+	</div>
+
+</body>
+</html>

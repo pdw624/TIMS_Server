@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>::::: T-Platform Management :::::</title>
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/default/easyui.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/color.css">
+
+<script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/locale/easyui-lang-ko.js"></script>
+
+<script type="text/javascript">
+
+$(function() {
+
+});
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                console.log(window.session);
+                //location.href = "imp.html";
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+
+
+	//$('#ff').submit();
+	//ff.submit();
+}
+
+function getQueryParam(param) {
+    var result = window.location.search.match(
+        new RegExp("(\\?|&)" + param + "(\\[\\])?=([^&]*)")
+    );
+    return result ? result[3] : false;
+}
+</script>
+</head>
+<body>
+<div id="dlg" class="easyui-dialog" title="Login" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width:350px;height:230px;padding:10px;overflow:hidden">
+    <form id="ff" name="ff" action="/auth/login" method="POST">
+        <div style="padding:0 20px">
+            <div style="margin-bottom:10px">
+                <input class="easyui-textbox" name="username" id="username" data-options="prompt:'Type username',iconCls:'icon-man',required:true" style="width:100%;height:38px">
+            </div>
+            <div>
+                <input class="easyui-passwordbox" name="password" id="password" data-options="prompt:'Type password',required:true" style="width:100%;height:38px">
+            </div>
+            <div style="text-align:center;margin-top:30px">
+                <a href="#" class="easyui-linkbutton" style="width:100%;height:40px" onclick="sign()"><span style="font-size:16px">Login</span></a>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>

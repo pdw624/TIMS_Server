@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>::::: T-Platform IMP Management :::::</title>
+<link rel="shortcut icon" type="image/x-icon" href="/asset/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/bootstrap/easyui.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/color.css">
+<style type="text/css">
+html, body {
+	height: 100%;
+	margin: 0px 0px 0px 0px;
+	padding: 0;
+	border: none;
+	background: #000;
+	overflow: hidden;
+}
+
+body {
+	font-family: 'Malgun Gothic', verdana, consolas
+}
+
+input {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+div#header {
+	color: #0099FF;
+	font-size: 22px;
+	font-weight: bold;
+	text-decoration: none
+}
+
+a.no-uline:link {
+	text-decoration: none
+}
+
+a.no-uline:visited {
+	text-decoration: none
+}
+
+a.no-uline:hover {
+	text-decoration: none
+}
+
+a.no-uline:active {
+	text-decoration: none
+}
+
+.modal {
+	position: fixed;
+	z-index: 999;
+	height: 100%;
+	width: 100%;
+	top: 0;
+	left: 0;
+	background-color: Black;
+	filter: alpha(opacity = 60);
+	opacity: 0.6;
+	-moz-opacity: 0.8;
+}
+
+.center {
+	z-index: 1000;
+	margin: 300px auto;
+	padding: 10px;
+	width: 130px;
+	background-color: none;
+	border-radius: 10px;
+	filter: alpha(opacity = 100);
+	opacity: 1;
+	-moz-opacity: 1;
+}
+
+.center img {
+	height: 128px;
+	width: 128px;
+}
+
+#grdSessionPanelTools div {
+	width: 80px;
+	height: 20px;
+	float: right;
+}
+
+#grdSessionPanelTools_a {
+	width: 80px;
+	height: 20px;
+	background-color: #ff8080;
+}
+
+.l-btn-text {
+	text-align: right;
+}
+/*
+.datagrid-btable, .datagrid-header-inner, .datagrid-htable {
+   width : 100%;
+}
+*/
+
+.tableContainer {
+  min-height:10px;
+  max-height:500px;
+}
+</style>
+
+<script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/asset/js/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/datagrid-filter.js"></script>
+<script type="text/javascript" src="/asset/js/tplatform.js"></script>
+<script type="text/javascript">
+window.session = { name: null, token: null };
+
+
+$(function() {
+	$('#dlgCommand').dialog('close');
+    var cookie = readCookie("T-PLATFORM");
+
+    if(cookie) {
+        window.session = JSON.parse(cookie);
+        $('#dlgLogin').dialog('close');
+    }
+
+    
+	$('#goBtn').on('click', function(){
+		setFtpGrd();
+	});
+	setBtn();
+	deleteFile();
+	setFileUpload();
+});//function
+
+/////////////////////aaaa/////////////////////////////////////////////////////////////
+function setBtn(){
+	clickRenameBtn()
+	downBtn();
+}
+function makeFtpGrd(jsonData){
+	  $('#ftpGrd').datagrid({
+	        data:jsonData,
+			checkOnSelect:false,
+			selectOnCheck:false,
+	        columns:[[
+	        	{field:'check', checkbox:true},
+	            {field:'name',title:'Name',width:200},
+	            {field:'size',title:'Size',width:100},
+	            {field:'timestamp',title:'Date',width:100}
+	        ]],
+	        onClickCell:function(field, row){
+				console.log(field);
+	        	console.log(row);
+	        }
+	    });
+}
+
+function setFtpGrd(){
+	$('#ftpGrd').empty();
+	
+	sessionStorage.setItem('dir', $('#dir').val());
+	sessionStorage.setItem('ip', $('#ip_ftp').val());
+	sessionStorage.setItem('id', $('#id_ftp').val());
+	sessionStorage.setItem('pwd', $('#pwd_ftp').val());
+
+	var param = {dir:sessionStorage.getItem('dir')
+				,ip:sessionStorage.getItem('ip')
+				,id:sessionStorage.getItem('id')
+				,pwd:sessionStorage.getItem('pwd')};
+	
+	jsonCall("/ftp/ftpTest", "POST", param, function(result, json){
+		if(result) {
+			console.log(json);
+			makeFtpGrd(json);
+			
+		} else {
+		    $.messager.alert('Error', 'Connection to server was lost');
+		}
+	});
+}
+
+function clickRenameBtn(){
+	$('#renameBtn').on('click', function(){
+		renameFile();
+	});
+}
+function renameFile(){
+		var selectFile = $('#ftpGrd').datagrid('getSelected');
+		var newName = prompt('새로운 파일명 입력(확장자 포함)', selectFile.name);
+		var param = {dir:sessionStorage.getItem('dir')
+				,oldName:selectFile.name
+				,newName:newName
+				,ip:sessionStorage.getItem('ip')
+				,id:sessionStorage.getItem('id')
+				,pwd:sessionStorage.getItem('pwd')
+				};
+		console.log(param);
+		jsonCall("/ftp/ftpRename", "POST", param, function(result, json){
+			if(result){
+				if(json == false){
+					alert("변경할 파일명을 확인해 주세요");
+				}
+				console.log(json);
+			}else{
+				$.messager.alert('Error', 'Connection to server was lost');
+			}
+		});
+}
+
+function deleteFile(){
+	var param;
+	$('#deleteBtn').on('click', function(){
+		var deleteList = new Array();
+		var ckd = $('#ftpGrd').treegrid('getChecked');
+
+		for(var i=0; i<ckd.length; i++){
+			deleteList.push(ckd[i].name);
+		}
+		
+		deleteList = deleteList.join('<>');//파일명으론 <>못쓰니까..
+
+		param = {directory:sessionStorage.getItem('dir')
+				,deleteList:deleteList
+				,ip:sessionStorage.getItem('ip')
+				,id:sessionStorage.getItem('id')
+				,pwd:sessionStorage.getItem('pwd')};
+		
+		console.log(param);
+		
+		jsonCall("/ftp/ftpDelete", "POST", param, function(result, json){
+			if(result){
+				console.log(json);
+			}else{
+				$.messager.alert('Error', 'Connection to server was lost');
+			}
+		});
+	});
+}
+
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                createCookie('T-PLATFORM', JSON.stringify(session), 7);
+                $('#dlgLogin').dialog('close');
+                refreshSession();
+                //setTimeout("updateSession()", 5000);
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+}
+
+function setFileUpload(){
+	var zone = $("#layout_main");
+
+    zone.on('dragenter', function (e) {
+	  	//console.log('zone enter');
+        e.stopPropagation();
+        e.preventDefault();
+        //$(this).css('border', '2px solid #5272A0');
+    });
+
+    zone.on('dragleave', function (e) {
+    	//console.log('zone leave');
+        e.stopPropagation();
+        e.preventDefault();
+        //$(this).css('border', '2px dotted #8296C2');
+    });
+
+    zone.on('dragover', function (e) {
+    	//console.log('zone over');
+        e.stopPropagation();
+        e.preventDefault();
+    });
+
+    zone.on('drop', function (e) {
+    	//console.log('drop');
+        e.preventDefault();
+        //$(this).css('border', '2px dotted #8296C2');
+
+        var files = e.originalEvent.dataTransfer.files;
+        if(files.length < 1)
+             return;
+        
+        fileMultiUpload(files, zone);
+    });
+}
+
+function fileMultiUpload(files, obj) {
+	var msg = '';
+	
+	//메시지 생성
+	for(var i = 0; i<files.length; i++){
+		msg += files[i].name + ' / ' + files[i].size + 'byte\n';
+	}
+	
+    if(confirm(msg + files.length + "개의 파일을 업로드 하시겠습니까?") ) {
+    	var param;
+        for (var i = 0; i < files.length; i++) {    
+        	param = new FormData();
+			param.append('file', files[i]);
+            param.append('directory', sessionStorage.getItem('dir'));
+			param.append('ip', sessionStorage.getItem('ip'));
+			param.append('id', sessionStorage.getItem('id'));
+			param.append('pwd', sessionStorage.getItem('pwd'));
+			fileSingleUpload(param);
+        }
+    }
+}
+
+function fileSingleUpload(param){
+    $.ajax({
+        headers: {
+            Authorization: "Basic " + btoa(window.session.name + ":" + window.session.token)
+        },
+        url: '/ftp/ftpUpload',
+        method: 'post',
+        data: param,
+        cache: false,
+        processData: false,
+        contentType: false,
+        timeout: 10000,
+        success: function(data, textStatus, jqXHR) {
+            var json = JSON.parse(jqXHR.responseText);
+            //$.messager.alert('Success', json.ret_message);
+        },
+        error : function(jqXHR, textStatus, errorThrown) {
+            $.messager.alert('Error', 'Connection to server was lost');
+        }
+     });
+}
+
+//파일 멀티 업로드 Callback
+function fileMultiUpload_Callback(files) {
+    for(var i=0; i < files.length; i++)
+        console.log(files[i].file_nm + " - " + files[i].file_size);
+}
+
+
+
+function uploadFile() {
+    var fileValue = $('input[name="file"').get(0).files[0];
+
+    if(fileValue == null || fileValue.length == 0) {
+        $.messager.alert('Error', 'Please select file!');
+        return;
+    }
+	
+    var formData = new FormData();
+    formData.append('file', fileValue);
+    formData.append('directory', sessionStorage.getItem('dir'));
+	formData.append('ip', sessionStorage.getItem('ip'));
+	formData.append('id', sessionStorage.getItem('id'));
+	formData.append('pwd', sessionStorage.getItem('pwd'));
+    fileSingleUpload(formData);
+   
+}
+
+function downBtn(){
+	$('#downBtn').on('click', function(){
+		console.log('click');
+		downloadFile();	
+	});
+}
+
+function downloadFile(){
+	var fileName = $('#ftpGrd').datagrid('getSelected').name;
+	var downPath = $('#mydir').val();
+	if(downPath.substr(downPath.length-1) != '/'){
+		downPath += '/';
+	}
+	var param = {dir		:	sessionStorage.getItem('dir')
+				,ip 		:	sessionStorage.getItem('ip')
+				,id 		:	sessionStorage.getItem('id')
+				,pwd		:	sessionStorage.getItem('pwd')
+				,fileName	:	fileName
+				,downPath	:	downPath
+				}
+	console.log(param);
+	
+	jsonCall("/ftp/ftpDownload", "POST", param, function(result, json){
+		if(result){
+			console.log(json);
+		}else{
+			$.messager.alert('Error', 'Connection to server was lost');
+		}
+	});
+}
+
+</script>
+</head>
+<body>
+
+	<div id="layout_main" class="easyui-layout" style="width: 100%; height: 100%;">
+		<div id="dv_main_north" data-options="region:'north'"
+			style="height: 33px; border-bottom-width: 1">
+			<div id="header" style="float: left; margin: 0px 10px 0 10px">
+				Testpage v0.4</div>
+		</div>
+		
+		<div id="dv_main_center" data-options="region:'center'" style="overflow: hidden">
+			<div id="layout_center" class="easyui-layout" style="width: 100%; height: 100%;">		
+				<!-- imp process list -->
+				<div id="pnlInfo" title="IMP Information" data-options="region:'center', iconCls:'icon-ok'" style="width: 100%; overflow: hidden">
+					ip : <input type="text" id="ip_ftp" value="127.0.0.1">
+					username : <input type="text" id="id_ftp" value="test">
+					password : <input type="password" id="pwd_ftp" value="test">
+					directory : <input type="text" id="dir" value="/">
+					mydir : <input type="text" id = "mydir" value="D:/temp/">
+					<br>
+					<input type="button" id="goBtn" value="새로고침">
+					<input type="button" id="renameBtn" value="renameBtn">
+					<input type="button" id="deleteBtn" value="delBtn">
+					<input type="button" id="downBtn" value="downBtn">
+					<br>
+					<form name="ff" id="ff" action="/file/upload" method="post"	enctype="multipart/form-data">
+					File Transfer : <input class="easyui-filebox" id="upload-file" name="file" data-options="prompt:'Choose a file...'"	style="width: 300px"> <span id="fsize"> ##.## MB
+					</span><a href="#" class="easyui-linkbutton" style="width: 100px" onclick="uploadFile()">fileUpload</a>
+					</Form>
+					<table id="ftpGrd"></table>
+				</div><!-- end of center -->
+				<!-- imp process list end-->
+				<!-- IMP control start -->
+
+			</div>
+		</div><!-- 우측 div전체 end -->
+	</div><!-- main div 우측, 좌측 포함한 전체 end -->
+
+	<div id="dlgLogin" class="easyui-dialog" title="Login" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width: 350px; height: 230px; padding: 10px; overflow: hidden">
+		<form id="fff" name="ff" action="/auth/login" method="POST">
+			<div style="padding: 0 20px">
+				<div style="margin-bottom: 10px">
+					<input class="easyui-textbox" name="username" id="username"	data-options="prompt:'Type username',iconCls:'icon-man',required:true" style="width: 100%; height: 38px">
+				</div>
+				<div>
+					<input class="easyui-passwordbox" name="password" id="password"	data-options="prompt:'Type password',required:true"	style="width: 100%; height: 38px">
+				</div>
+				<div style="text-align: center; margin-top: 30px">
+					<a href="#" class="easyui-linkbutton" style="width: 100%; height: 40px" onclick="sign()"><span style="font-size: 16px">Login</span></a>
+				</div>
+			</div>
+		</form>
+	</div>
+
+</body>
+</html>

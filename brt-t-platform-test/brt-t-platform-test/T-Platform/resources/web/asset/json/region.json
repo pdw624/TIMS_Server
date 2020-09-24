@@ -1,0 +1,190 @@
+[
+	{
+		"id" : "All",
+		"text" : "전체",
+		"localNumber" : "",
+		"selected" : true,
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "동진버스"},
+			{"comp" : "동해상사"},
+			{"comp" : "대한교통"},
+			{"comp" : "금강고속"},
+			{"comp" : "현대교통"},
+			{"comp" : "덕성여객"},
+			{"comp" : "부여여객"},
+			{"comp" : "광일여객"},
+			{"comp" : "신흥여객"},
+			{"comp" : "익산여객"},
+			{"comp" : "대한고속"},
+			{"comp" : "임순여객"},
+			{"comp" : "영주여객"},
+			{"comp" : "무진장여객"},
+			{"comp" : "진천여객"},
+			{"comp" : "음성교통"},
+			{"comp" : "단양버스"},
+			{"comp" : "고흥여객"},
+			{"comp" : "대흥여객"},
+			{"comp" : "부안스마일교통"},
+			{"comp" : "부안여객"}
+			]
+	},
+	
+	{
+		"id" : "Gangneung",
+		"text" : "강릉",
+		"localNumber" : "252",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},	
+			{"comp" : "동진버스"},
+			{"comp" : "동해상사"}
+			]
+	},
+	
+	{
+		"id" : "Hongcheon",
+		"text" : "홍천",
+		"localNumber" : "257",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "대한교통"},
+			{"comp" : "금강고속"},
+			{"comp" : "현대교통"}
+			]
+	},
+	
+	{
+		"id" : "Nonsan",
+		"text" : "논산",
+		"localNumber" : "290",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "덕성여객"}
+			]
+	},
+	
+	{
+		"id" : "Buyeo",
+		"text" : "부여",
+		"localNumber" : "294",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "부여여객"}
+			]
+	},
+	
+	{
+		"id" : "Iksan",
+		"text" : "익산",
+		"localNumber" : "308",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "광일여객"},
+			{"comp" : "신흥여객"},
+			{"comp" : "익산여객"}
+			]
+	},
+	
+	{
+		"id" : "Jeongeup",
+		"text" : "정읍",
+		"localNumber" : "309",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "대한고속"}
+			]
+	},
+	
+	{
+		"id" : "SunchangImsil",
+		"text" : "순창임실",
+		"localNumber" : "316",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "임순여객"}
+			]
+	},
+	
+	{
+		"id" : "Yeongju",
+		"text" : "영주",
+		"localNumber" : "356",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "영주여객"}
+			]
+	},
+	
+	{
+		"id" : "JangsuJinan",
+		"text" : "장수진안",
+		"localNumber" : "313",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "무진장여객"}
+			]
+	},
+	{
+		"id" : "Jinchun",
+		"text" : "진천",
+		"localNumber" : "279",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "진천여객"}
+			]
+	},
+	{
+		"id" : "Emsung",
+		"text" : "음성",
+		"localNumber" : "281",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "음성교통"}
+			]
+	},
+	{
+		"id" : "Danyang",
+		"text" : "단양",
+		"localNumber" : "282",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "단양버스"}
+			]
+	},
+	{
+		"id" : "Goheung",
+		"text" : "고흥",
+		"localNumber" : "332",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "고흥여객"},
+			{"comp" : "대흥여객"}
+			]
+	},
+	{
+		"id" : "Buahn",
+		"text" : "부안",
+		"localNumber" : "319",
+		"comp_list" : [
+			{"comp" : "전체",
+			"selected" : true},
+			{"comp" : "부안스마일교통"},
+			{"comp" : "부안여객"}
+			]
+	}
+	
+]

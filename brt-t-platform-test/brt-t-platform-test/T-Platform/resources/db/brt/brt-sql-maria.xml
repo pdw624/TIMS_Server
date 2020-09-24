@@ -1,0 +1,269 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="Brt">
+	<select id="selectWeather" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  CONCAT(DATE_FORMAT(W.NOTI_DT, '%Y%m%d%H'), '0000') AS NOTI_DT
+			, CONVERT(D.NUM_VAL4, INT) AS SKY_COND
+			, CONVERT(W.TEMPC * 10, INT) AS TEMPC
+			, IF(W.TEMP_MINI = -999.0, CONVERT(W.TEMP_MINI, INT), CONVERT(W.TEMP_MINI * 10, INT)) AS TEMP_MINI
+			, IF(W.TEMP_HIGH = -999.0, CONVERT(W.TEMP_HIGH, INT), CONVERT(W.TEMP_HIGH * 10, INT)) AS TEMP_HIGH
+			, CONVERT(W.HUMI, INT) AS HUMI
+			, CONVERT(W.RAIN_PRO, INT) AS RAIN_PRO
+			, CONVERT(W.RAINFALL * 10, INT) AS RAINFALL
+		FROM
+			BM_WEAT_INFO W
+			LEFT OUTER JOIN SM_DL_CD_INFO D
+			ON W.SKY_COND = D.DL_CD
+			AND D.CO_CD = 'SKY_COND'
+			AND D.USE_YN = 'Y'
+		ORDER BY NOTI_DT DESC LIMIT 1
+	</select>
+	
+	<select id="selectNews" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			LEFT(CONCAT('[', PROV_NM, ']', NEWS_TITLE), 50) AS CONTENT
+		FROM
+			BM_NEWS
+		WHERE
+			USE_YN = 'Y'
+	</select>
+	
+	<select id="selectAirQuality" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  CONCAT(DATE_FORMAT(MEAS_DT, '%Y%m%d%H'), '0000') AS MEAS_DT
+			, DUSTC
+			, SDUSTC
+			, SDC
+			, CMC
+			, OZONEC
+			, NDC
+		FROM
+			BM_ATMO_INFO
+		ORDER BY MEAS_DT DESC LIMIT 1
+	</select>
+	
+	<insert id="insertLivingLog" parameterType="HashMap">
+		INSERT INTO BM_LIVING_LOG(
+			  MNG_ID
+			, SEND_DATE
+			, ATTR_ID
+		)
+		VALUES(
+			  #{MNG_ID}
+			, NOW()
+			, (SELECT DL_CD FROM SM_DL_CD_INFO WHERE CO_CD = 'LIVING_RESULT' AND NUM_VAL4 = #{ATTR_ID})
+		)
+	</insert>
+	
+	<!-- ==================== 펌웨어 업데이트 예약  ==================== -->
+	<select id="selectDeviceUpdateReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+		 	  L.MNG_ID
+			, L.RSV_ID
+		FROM
+			BM_UPD_LOG L
+			INNER JOIN BM_UPD_RSV U
+			ON L.RSV_ID = U.RSV_ID
+			AND U.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			L.MNG_ID LIKE CONCAT(#{MNG_ID}, '%')
+			AND L.COMPLETE_YN = 'N'
+	</select>
+	<!-- =================================================== -->
+	
+	<!-- ==================== 행선지 안내기  ==================== -->
+	<select id="selectDestiReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  R.RSV_ID
+			, R.MNG_ID
+		FROM
+			BM_DESTI_RSV_RST R
+			INNER JOIN BM_DESTI_RSV D
+			ON R.RSV_ID = D.RSV_ID
+			AND D.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			R.MNG_ID LIKE CONCAT(#{MNG_ID}, '%')
+			AND R.COMPLETE_YN = 'N'
+	</select>
+	<!-- =================================================== -->
+	
+	<!-- ==================== 음성 예약  ====================== -->
+	<select id="selectVoiceReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  R.RSV_ID
+			, R.MNG_ID
+			, V.ROUT_ID
+		FROM
+			BM_VOC_RSV_RST R
+			INNER JOIN BM_VOC_RSV V
+			ON R.RSV_ID = V.RSV_ID
+			AND V.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			R.MNG_ID = #{MNG_ID}
+			AND R.COMPLETE_YN = 'N'
+		GROUP BY R.RSV_ID
+	</select>
+	<!-- =================================================== -->
+	
+	<!-- ==================== 영상(승객용안내기) 예약  ====================== -->
+	<select id="selectVideoReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  R.RSV_ID
+			, R.MNG_ID
+		FROM
+			BM_VDO_RSV_RST R
+			INNER JOIN BM_VDO_RSV V
+			ON R.RSV_ID = V.RSV_ID
+			AND V.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			R.MNG_ID LIKE CONCAT(#{MNG_ID}, '%')
+			AND R.COMPLETE_YN = 'N'
+	</select>
+	<!-- ============================================================= -->
+	
+	<!-- ==================== 화면 설정(승객용안내기) 예약  ====================== -->
+	<select id="selectScreenReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  R.RSV_ID
+			, R.MNG_ID
+		FROM
+			BM_SCR_RSV_RST R
+			INNER JOIN BM_SCR_RSV S
+			ON R.RSV_ID = S.RSV_ID
+			AND S.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			R.MNG_ID LIKE CONCAT(#{MNG_ID}, '%')
+			AND R.COMPLETE_YN = 'N'
+	</select>
+	<!-- ================================================================= -->
+	
+	<!-- ========================= 전자노선도 예약  =========================== -->
+	<select id="selectElectronicRouterReservation" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  R.RSV_ID
+			, R.MNG_ID
+		FROM
+			BM_ED_RSV_RST R
+			INNER JOIN BM_ED_RSV E
+			ON R.RSV_ID = E.RSV_ID
+			AND E.RSV_DATE &lt;= DATE_FORMAT(NOW(), '%Y-%m-%d')
+		WHERE
+			R.MNG_ID LIKE CONCAT(#{MNG_ID}, '%')
+			AND R.COMPLETE_YN = 'N'
+	</select>
+	<!-- ================================================================= -->
+	
+	<!-- 장치 위치 삽입 -->
+	<insert id="insertDeviceLocation" parameterType="HashMap">
+		INSERT INTO BM_DVC_LOC_LOG(
+			  MNG_ID
+			, SEND_DATE
+			, LATI
+			, LONGI
+			, SPD
+			, HEADING
+			, EPLY_ID
+			, ROUT_ID
+			, REMARK
+		)
+		VALUES(
+			  #{DEVICE_ID}
+			<choose>
+				<when test="LATITUDE != null and LATITUDE != '' and LONGITUDE != null and LONGITUDE != ''">
+					, DATE_FORMAT(#{GPS_DT}, '%Y-%m-%d %H:%i:%s')
+				</when>
+				<otherwise>
+					, NOW()
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="LATITUDE != null and LATITUDE != ''">
+					, #{LATITUDE}
+				</when>
+				<otherwise>
+					, NULL
+				</otherwise>
+			</choose>
+			<choose>
+				<when test="LONGITUDE != null and LONGITUDE != ''">
+					, #{LONGITUDE}
+				</when>
+				<otherwise>
+					, NULL
+				</otherwise>
+			</choose>
+			, #{SPEED}
+			, #{HEADING}
+			, #{EMPLOYEE_ID}
+			, #{ROUTE_ID}
+			, #{REMARK}
+		)
+	</insert>
+	
+	<!-- 장치 상태 삽입 -->
+	<insert id="insertDeviceCondition" parameterType="HashMap">
+		INSERT INTO BM_DVC_COND_LOG(
+			  MNG_ID
+			, SEND_DATE
+			, DVC_COND
+			, VER_INFO
+			, REMARK
+		)
+		VALUES
+		<foreach collection="STATUS_LIST" item="item" separator=",">
+		(
+			  #{item.deviceId}
+			, NOW()
+			, (SELECT DL_CD FROM SM_DL_CD_INFO WHERE CO_CD = 'DVC_COND' AND NUM_VAL4 = #{item.statusCode})
+			, #{item.version}
+			, #{item.REMARK}
+		)
+		</foreach>
+	</insert>
+	
+	<select id="selectReservationTable" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			DL_CD_NM AS TABLE_NAME
+		FROM
+			SM_DL_CD_INFO
+		WHERE
+			CO_CD = 'CODE_TABLE'
+			AND DL_CD = #{CODE}
+	</select>
+	
+	<update id="updateReservationResult" parameterType="HashMap">
+		UPDATE ${TABLE_NAME}
+		SET
+			  RSV_ID		= #{RSV_ID}
+			, MNG_ID		= #{MNG_ID}
+			, PROCE_RST		= (SELECT DL_CD FROM SM_DL_CD_INFO WHERE CO_CD = 'FTP_RESULT' AND NUM_VAL4 = #{RESULT_CODE})
+			, SEND_DATE		= NOW()
+			, COMPLETE_YN	= 'Y'
+		WHERE
+			RSV_ID = #{RSV_ID}
+			AND MNG_ID = #{MNG_ID}
+	</update>
+	
+	<select id="selectRouteInfo" parameterType="HashMap" resultType="HashMap">
+		SELECT
+			  DATE_FORMAT(PUB_DATE, '%Y%m%d%H%i%s') AS PUB_DATE
+			, ROUT_NM AS ROUT_ID
+			, DIR_INFO AS ROUT_NM_KO
+			, '' AS ROUT_NM_EN
+			, IFNULL(LINE1_STR, '') AS LINE1_STR
+			, IFNULL(LINE2_STR, '') AS LINE2_STR
+			, IFNULL(LINE1_SATSTR, '') AS LINE1_SATSTR
+			, IFNULL(LINE2_SATSTR, '') AS LINE2_SATSTR
+			, IFNULL(LINE1_SUNSTR, '') AS LINE1_SUNSTR
+			, IFNULL(LINE2_SUNSTR, '') AS LINE2_SUNSTR
+		FROM
+			BM_ROUT_INFO R
+			LEFT OUTER JOIN SM_DL_CD_INFO DC
+			ON R.WAY_DIV = DC.TXT_VAL1
+			AND DC.CO_CD = 'UPDOWN_FLAG'
+		WHERE
+			ROUT_ID = #{ROUT_ID}
+	</select>
+</mapper>

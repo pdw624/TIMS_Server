@@ -1,0 +1,551 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="Platform">
+	<!-- SERVICE DB LINK -->
+	<update id="plfLinkSchema" parameterType="HashMap">
+		CALL LINK_SCHEMA(#{TG_SCHEMA}, #{TG_DRIVER}, #{TG_URL}, #{TG_ID}, #{TG_PW}, 'PUBLIC');
+	</update>
+
+	<!-- PLATFORM DB LINK BACKUP -->
+<!-- 
+	<insert id="plfCopy" parameterType="HashMap">
+		INSERT INTO SVC_DB."${SVC_TABLE}"
+			SELECT ${FIELD_LIST}
+			FROM ${PLF_TABLE}
+			WHERE SYS_DT <![CDATA[ <= ]]> FORMATDATETIME(DATEADD(#{BK_GBN}, #{BK_TIME}, PARSEDATETIME(#{BK_NOW},'yyyyMMddHHmmss')), 'yyyyMMddHHmmss')
+		<if test=" clauseItems != null ">
+			AND
+			<foreach item="clause" collection="clauseItems" separator=" AND " open="(" close=")">
+				${clause.column} ${clause.operator} #{clause.value}
+			</foreach>
+		</if>
+	</insert>
+ -->
+ 	<!-- MYSQL용 -->
+	<insert id="plfCopy" parameterType="HashMap">
+		INSERT INTO SVC_DB."${SVC_TABLE}"
+			SELECT ${FIELD_LIST}
+			FROM ${PLF_TABLE}
+			WHERE SYS_DT <![CDATA[ <= ]]> DATE_FORMAT(ADDDATE(STR_TO_DATE(#{BK_NOW}, %Y%m%d%H%i%s), INTERVAL ${BK_TIME} ${BK_GBN}), '%Y%m%d%H%i%s')
+		<if test=" clauseItems != null ">
+			AND
+			<foreach item="clause" collection="clauseItems" separator=" AND " open="(" close=")">
+				${clause.column} ${clause.operator} #{clause.value}
+			</foreach>
+		</if>
+	</insert>
+
+	<!-- 
+	<delete id="plfDelete" parameterType="HashMap">
+		DELETE FROM ${PLF_TABLE}
+		WHERE SYS_DT <![CDATA[ <= ]]>FORMATDATETIME(DATEADD(#{BK_GBN}, #{BK_TIME}, PARSEDATETIME(#{BK_NOW},'yyyyMMddHHmmss')), 'yyyyMMddHHmmss')
+		<if test=" clauseItems != null ">
+			AND
+			<foreach item="clause" collection="clauseItems" separator=" AND " open="(" close=")">
+				${clause.column} ${clause.operator} #{clause.value}
+			</foreach>
+		</if>
+	</delete>
+	 -->
+	 <!-- MYSQL용 -->
+	<delete id="plfDelete" parameterType="HashMap">
+		DELETE FROM ${PLF_TABLE}
+		WHERE SYS_DT <![CDATA[ <= ]]>DATE_FORMAT(ADDDATE(STR_TO_DATE(${BK_NOW}, '%Y%m%d%H%i%s'), INTERVAL ${BK_TIME} ${BK_GBN}), '%Y%m%d%H%i%s')
+		<if test=" clauseItems != null ">
+			AND
+			<foreach item="clause" collection="clauseItems" separator=" AND " open="(" close=")">
+				${clause.column} ${clause.operator} #{clause.value}
+			</foreach>
+		</if>
+	</delete>
+	<update id="plfMerge" parameterType="HashMap">
+		<![CDATA[
+		MERGE INTO SVC_DB."${SVC_TABLE}"
+			KEY (${TABLE_KEY})
+		SELECT ${FIELD_LIST}
+		FROM ${PLF_TABLE}
+		]]>
+	</update>
+
+	<select id="selectTables" parameterType="HashMap" resultType="String">
+		<![CDATA[
+		SELECT TABLE_NAME
+		FROM INFORMATION_SCHEMA.TABLES
+		WHERE TABLE_CATALOG = #{TB_CATALOG}
+		AND TABLE_SCHEMA = #{TB_SCHEMA}
+		AND TABLE_NAME LIKE #{TB_PREFIX} || '%'
+		]]>
+	</select>
+
+	<delete id="truncateTable" parameterType="HashMap">
+		TRUNCATE TABLE ${TB_NAME}
+	</delete>
+
+	<delete id="dropView" parameterType="HashMap">
+		DROP VIEW IF EXISTS ${TB_NAME}
+	</delete>
+
+	<select id="dbStatus" resultType="kr.tracom.platform.service.domain.ItH2DbStatus">
+		SELECT	NOW() AS nowDateTime,
+				SUM(data_length+index_length)/1024/1024 memoryUsed,
+				SUM(data_free)/1024/1024 memoryFree
+   		FROM information_schema.tables
+	</select>
+
+	<!-- 서버 접속정보 검색 -->
+	<select id="selectServer" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtServer">
+		SELECT PLF_ID 	AS platformId,
+			GRP_ID 		AS groupId,
+			SVR_IP 		AS serverIp,
+			SVR_PORT 	AS serverPort,
+			PRTL_TYPE 	AS protocolType,
+			USER_ID 	AS userId,
+			USER_PW		AS userPw
+		FROM PLF_MT_SERVER
+		WHERE PLF_ID = #{PLF_ID}
+		AND GRP_ID = #{GRP_ID}
+	</select>
+	
+	<select id="selectLauncherConfig" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtLauncher">
+		SELECT  PLF_ID		AS platformId,
+				IP			AS ip, 
+				CITY		AS city,
+				LANG_CD		AS langCode,
+				TIME_ZONE	AS timeZone,
+				DT_FORMAT	AS dateTimeFormat,
+				DATE_FORMAT	AS dateFormat,
+				TIME_FORMAT	AS timeFormat,
+				LOG_CD		AS logLevel,
+				SINCE_DT	AS sinceDate
+		FROM PLF_MT_LAUNCHER
+		WHERE PLF_ID = #{PLF_ID}
+	</select>	
+	
+	<select id="selectChannelConfig" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtChannel">
+		SELECT PLF_ID  	AS platformId,
+			CH_NAME 	AS channelName,
+			CH_PORT		AS channelPort,
+			R_TIMEOUT	AS readTimeout,
+			W_TIMEOUT	AS writeTimeout,
+			HEADER_TYPE	AS headerType,
+			STR_TYPE	AS strEncoding,
+			ENDIAN_TYPE	AS endianType,
+			PRTL_VER	AS version,
+			INDICATOR 	AS indicator,
+			MAX_SIZE 	AS maxPacketSize,
+			MAX_COUNT 	AS maxPacketCount,
+			APDU_OFFSET AS apduOffset,
+			OPT_RC		AS retryCount,
+			OPT_TO		AS responseTimeout,
+			OPT_TR		AS transferRoute,
+			OPT_CE		AS crcEnable,
+			OPT_RF		AS remoteControl,
+			OPT_LF		AS localControl
+		FROM PLF_MT_CHANNEL
+		WHERE PLF_ID = #{PLF_ID}
+	</select>
+	
+	<select id="selectServiceApp" resultType="kr.tracom.platform.service.domain.MtServiceApp">
+		SELECT  SVC_ID		AS id,
+				SVC_NAME	AS name,
+				VERSION		AS version,
+				ATTRIBUTE	AS attribute,
+				LAUNCHER	AS launcher,
+				USE_YN		AS enable,
+				ST_DT		AS licenseStartDate,
+				ED_DT		AS licenseEndDate
+		FROM PLF_MT_SERVICE
+		WHERE USE_YN = 'Y'
+	</select>
+	
+	<!-- SESSION -->
+	<select id="selectListSession" parameterType="HashMap" resultType="kr.tracom.platform.tcp.model.TcpSession">
+		SELECT PLF_ID		AS platformId,
+			SESSION_ID		AS sessionId,
+			SESSION_NAME	AS sessionName,
+			SESSION_IP		AS sessionIp,
+			REMOTE_TYPE		AS remoteType,
+			ELAPSED_TIME	AS elapsedTime,
+			IN_PACKET		AS inPacketUsage,
+			OUT_PACKET		AS outPacketUsage,
+			LOGIN_DT		AS loginDateTime,
+			LOGOUT_DT		AS logoutDateTime,
+			LAST_DT			AS lastDateTime
+		FROM PLF_IT_SESSION
+		ORDER BY SESSION_ID
+	</select>
+
+    <select id="selectSession" parameterType="HashMap" resultType="kr.tracom.platform.tcp.model.TcpSession">
+		SELECT PLF_ID			AS platformId,
+		       SESSION_ID		AS sessionId,
+		       SESSION_NAME		AS sessionName,
+			   SESSION_IP		AS sessionIp, 
+			   REMOTE_TYPE		AS remoteType,
+			   ELAPSED_TIME		AS elapsedTime,
+			   IN_PACKET		AS inPacketUsage,
+			   OUT_PACKET		AS outPacketUsage,			   
+			   LOGIN_DT			AS loginDateTime,  
+			   LOGOUT_DT		AS logoutDateTime,
+		       LAST_DT			AS lastDateTime
+		FROM PLF_IT_SESSION
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+    </select>
+    
+    <update id="updateSessionIn" parameterType="HashMap">
+        UPDATE PLF_IT_SESSION SET
+        	SESSION_IP = #{SESSION_IP},
+        	LOGIN_DT = #{LOGIN_DT},
+			LOGOUT_DT = #{LOGOUT_DT},
+			LAST_DT = #{LAST_DT}
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+    </update>
+    
+    <update id="updateSessionOut" parameterType="HashMap">
+        UPDATE PLF_IT_SESSION SET
+			SESSION_IP = #{SESSION_IP},
+			LOGIN_DT = #{LOGIN_DT},
+			LOGOUT_DT = #{LOGOUT_DT},
+			LAST_DT = #{LAST_DT}
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+    </update>
+	
+	<update id="updateSession" parameterType="HashMap">
+        UPDATE PLF_IT_SESSION SET
+			SESSION_IP = #{SESSION_IP},
+			LOGIN_DT = #{LOGIN_DT},
+			LOGOUT_DT = #{LOGOUT_DT},
+        	ELAPSED_TIME = #{ELAPSED_TIME},
+        	IN_PACKET = #{IN_PACKET},
+        	OUT_PACKET = #{OUT_PACKET},
+			LAST_DT = #{LAST_DT}
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+    </update>
+	
+	<!-- STATUS -->		
+    <select id="selectStatus" resultType="kr.tracom.platform.service.domain.ItPlatformStatus">
+		SELECT PLF_ID			AS platformId, 
+			   RUN_DT			AS runDateTime, 
+			   ELAPSED_TIME		AS elapsedTime,
+			   CPU_USAGE		AS cpuUsage,  
+			   RAM_USAGE		AS ramUsage,
+			   HDD_USAGE		AS hddUsage,
+			   JVM_USAGE		AS jvmUsage,
+			   UPD_DT			AS updateDateTime
+		FROM PLF_IT_STATUS
+    </select>
+	
+	<update id="updateStatus" parameterType="HashMap">
+		INSERT INTO PLF_IT_STATUS(PLF_ID, RUN_DT, ELAPSED_TIME, CPU_USAGE, RAM_USAGE, HDD_USAGE, JVM_USAGE, UPD_DT)
+		VALUES(#{PLF_ID}, #{RUN_DT}, #{ELAPSED_TIME}, #{CPU_USAGE}, #{RAM_USAGE}, #{HDD_USAGE}, #{JVM_USAGE}, #{UPD_DT})
+		ON DUPLICATE KEY UPDATE PLF_ID = #{PLF_ID}, RUN_DT = #{RUN_DT}, ELAPSED_TIME = #{ELAPSED_TIME}, CPU_USAGE = #{CPU_USAGE},
+		RAM_USAGE = #{CPU_USAGE}, HDD_USAGE = #{CPU_USAGE}, JVM_USAGE = #{JVM_USAGE}, UPD_DT = #{UPD_DT}
+	</update> 	
+    	
+    <!-- ERROR -->
+    <insert id="errorLog" parameterType="HashMap">
+		INSERT INTO PLF_HT_LOG(APP_ID, LOG_DT, SEQ, CLASS, METHOD, PARAM, MESSAGE, SYS_DT)
+		VALUES (#{APP_ID},
+				#{LOG_DT},
+				(SELECT COALESCE(MAX(P.SEQ), 0) + 1 FROM PLF_HT_LOG P WHERE P.APP_ID = #{APP_ID} AND P.LOG_DT = #{LOG_DT}),
+				#{CLASS},
+				#{METHOD},
+				#{PARAM},
+				#{MESSAGE},
+				#{SYS_DT})
+    </insert>
+
+	<!-- Admin -->
+	<select id="selectAdmin" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtAdmin">
+		SELECT ADM_ID 		AS id,
+		       ADM_NAME 	AS name,
+		       ADM_LEVEL  	AS level,
+		       PHONE 		AS phone,
+		       EMAIL 		AS email
+		FROM PLF_MT_ADMIN
+	</select>
+
+	<!-- 버전 -->
+	<update id="updateDeviceVersion" parameterType="HashMap">
+		<![CDATA[
+			INSERT INTO PLF_IT_DEV_VERSION(DEVICE_ID, VERSION_CD, DEVICE_TYPE, VERSION_VALUE, SYS_DT)
+			VALUES(#{DEVICE_ID}, #{CODE}, #{DEVICE_TYPE}, #{VALUE}, #{SYS_DT})
+			ON DUPLICATE KEY UPDATE DEVICE_ID = #{DEVICE_ID}, VERSION_CD = #{CODE}, DEVICE_TYPE = #{DEVICE_TYPE},
+			VERSION_VALUE = #{VALUE}, SYS_DT = #{SYS_DT}
+		]]>
+	</update>
+
+	<!-- 상태 -->
+	<update id="insertDeviceStatus" parameterType="HashMap">
+		<![CDATA[
+		INSERT INTO PLF_HT_DEV_STATUS(SYS_DT, DEVICE_ID, STATUS_CD, DEVICE_TYPE, STATUS_VALUE)
+		VALUES(#{SYS_DT}, #{DEVICE_ID}, #{CODE}, #{DEVICE_TYPE}, #{VALUE})
+		]]>
+	</update>
+
+	<!-- 제어 -->
+	<update id="insertDeviceControl" parameterType="HashMap">
+		<![CDATA[
+		INSERT INTO PLF_HT_DEV_CONTROL(SYS_DT, DEVICE_ID, CONTROL_CD, DEVICE_TYPE, CONTROL_VALUE, CONTROL_RESULT)
+		VALUES(#{SYS_DT}, #{DEVICE_ID}, #{CODE}, #{DEVICE_TYPE}, #{VALUE}, #{RESULT})
+	]]>
+	</update>
+
+	<!-- 스케줄 정보 -->
+	<select id="selectAllSchedule" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtScheduleJob">
+		SELECT  APP_ID 			AS appId,
+				JOB_CLASS 		AS jobClass,
+				JOB_NAME 		AS jobName,
+				JOB_ARGS 		AS args,
+				PERIOD 			AS period,
+				USE_YN 			AS enable
+		FROM    PLF_MT_SCHEDULE
+		WHERE   USE_YN = 'Y'
+	</select>
+
+	<select id="selectSchedule" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtScheduleJob">
+		SELECT  APP_ID 			AS appId,
+				JOB_CLASS 		AS jobClass,
+				JOB_NAME 		AS jobName,
+				JOB_ARGS 		AS args,
+				PERIOD 			AS period,
+				USE_YN 			AS enable
+		FROM    PLF_MT_SCHEDULE
+		WHERE   APP_ID = #{APP_ID}
+		  AND   USE_YN = 'Y'
+	</select>
+
+	<!-- 백업 정보 -->
+	<select id="selectBackup" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtBackupTable">
+		SELECT APP_ID 			AS appId,
+			   PLF_TB_NAME 		AS platformTableName,
+			   SVC_TB_NAME 		AS serviceTableName,
+		       FIELD_LIST 		AS fieldList,
+			   BK_TYPE 			AS type,
+			   BK_PERIOD 		AS period,
+			   TABLE_KEY 		AS tableKey,
+			   LINK_MAPPER 		AS dbLinkMapper,
+			   DEL_MAPPER 		AS deleteMapper,
+			   SELECT_WHERE 	AS selectWhere,
+		       USE_YN           AS enable
+		FROM   PLF_MT_BACKUP
+		WHERE  APP_ID = #{APP_ID}
+		AND    BK_PERIOD = #{PERIOD}
+		AND    USE_YN = 'Y'
+	</select>
+
+	<!-- TRANSACTION -->
+	<select id="selectTransaction" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.HtTransaction">
+		SELECT REG_DT 		AS registerDateTime,
+			PLF_ID 			AS platformId,
+			SESSION_ID 		AS sessionId,
+			PACKET_ID 		AS packetId,
+			REMOTE_TYPE 	AS remoteType,
+			PAYLOAD_TYPE 	AS payloadType,
+			ATTR_COUNT 		AS attributeCount,
+			ATTR_LIST 		AS attributeList,
+			STR_DATA 		AS stringData,
+			RETRY_COUNT 	AS retryCount,
+			SEND_STATE 		AS sendState,
+			SEND_DT 		AS sendDateTime,
+			SYS_DT 			AS systemDateTime
+		FROM   PLF_HT_TRANSACTION
+		WHERE  PLF_ID = #{PLF_ID}
+		ORDER BY REG_DT DESC, PACKET_ID
+	</select>
+
+	<insert id="insertTransaction" parameterType="HashMap">
+		INSERT INTO PLF_HT_TRANSACTION(REG_DT, PLF_ID, SESSION_ID, PACKET_ID, REMOTE_TYPE, PAYLOAD_TYPE,
+			ATTR_COUNT, ATTR_LIST, STR_DATA, RETRY_COUNT, SEND_STATE, SEND_DT, SYS_DT)
+		VALUES (
+			#{REG_DT},
+			#{PLF_ID},
+			#{SESSION_ID},
+			#{PACKET_ID},
+			#{REMOTE_TYPE},
+			#{PAYLOAD_TYPE},
+			#{ATTR_COUNT},
+			#{ATTR_LIST},
+			#{STR_DATA},
+			#{RETRY_COUNT},
+			#{SEND_STATE},
+			#{SEND_DT},
+			#{SYS_DT}
+		)
+	</insert>
+
+	<update id="updateTransaction" parameterType="HashMap">
+		UPDATE PLF_HT_TRANSACTION SET
+			RETRY_COUNT = #{RETRY_COUNT},
+			SEND_STATE = #{SEND_STATE},
+			SEND_DT = #{SEND_DT}
+		WHERE REG_DT = #{REG_DT}
+		AND PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+		AND PACKET_ID = #{PACKET_ID}
+	</update>
+
+	<update id="deleteTransaction" parameterType="HashMap">
+		DELETE PLF_HT_TRANSACTION
+		WHERE PLF_ID = #{PLF_ID}
+		<if test=" SEND_STATE != null ">
+			AND SEND_STATE = #{SEND_STATE}
+		</if>
+	</update>
+
+	<!-- 로그 관리 -->
+	<select id="selectFileLog" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtLogFile">
+		SELECT APP_ID 	AS appId,
+				LOG_NAME 		AS logName,
+				LOG_PATH 		AS logPath,
+				PRCS_TYPE 		AS prcsType,
+				DEL_DAYS 		AS deleteDays,
+				USE_YN 			AS enable
+		FROM PLF_MT_FILE_LOG
+		WHERE USE_YN = 'Y'
+	</select>
+
+	<!-- 라우팅 테이블 검색 -->
+	<select id="selectRoutingGroup" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtRouting">
+		SELECT DISTINCT GRP_ID 	AS groupId
+		FROM PLF_MT_ROUTING
+		WHERE SYS_NAME = #{SYS_NAME}
+	</select>
+
+	<select id="selectRoutingById" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtRouting">
+		SELECT GRP_ID 	AS groupId,
+			SYS_ID 		AS systemId,
+			SVC_ID 		AS serviceId
+		FROM PLF_MT_ROUTING
+		WHERE SYS_NAME = #{SYS_NAME}
+		AND SVC_NAME = #{SVC_NAME}
+	</select>
+
+	<select id="selectRoutingByAddress" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtRouting">
+		SELECT SYS_NAME 	AS systemName
+		FROM PLF_MT_ROUTING
+		WHERE GRP_ID = #{GRP_ID}
+		AND SYS_ID = #{SYS_ID}
+		AND SVC_ID = #{SVC_ID}
+	</select>
+
+	<select id="selectRoutingSystem" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtRouting">
+		SELECT GRP_ID AS groupId,
+			SYS_NAME  AS systemName
+			FROM PLF_MT_ROUTING
+		<if test=" GRP_LIST != null ">
+			WHERE GRP_ID IN
+			<foreach item="item" collection="GRP_LIST" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+		</if>
+		GROUP BY SYS_NAME
+		ORDER BY SYS_NAME
+	</select>
+
+	<!-- 파일 전송 관리 -->
+	<insert id="insertFileRegister" parameterType="HashMap">
+		INSERT INTO PLF_HT_FILE_TRANSFER(PLF_ID, SESSION_ID, FILE_NAME, FILE_CD, SEND_TYPE, FILE_PATH, FILE_SIZE, FILE_POINTER
+                                		,SEND_STATE, SEND_ST_DT, SEND_ED_DT, SYS_DT)
+        VALUES (#{PLF_ID}, #{SESSION_ID}, #{FILE_NAME}, #{FILE_CD}, #{SEND_TYPE}, #{FILE_PATH},
+           		#{FILE_SIZE}, #{FILE_POINTER}, #{SEND_STATE}, #{SEND_ST_DT}, #{SEND_ED_DT}, #{SYS_DT})
+		ON DUPLICATE KEY UPDATE PLF_ID=#{PLF_ID}, SESSION_ID=#{SESSION_ID}
+                                ,FILE_NAME=#{FILE_NAME}, FILE_CD=#{FILE_CD}
+                                ,SEND_TYPE=#{SEND_TYPE}, FILE_PATH=#{FILE_PATH}
+                                ,FILE_SIZE=#{FILE_SIZE}, FILE_POINTER=#{FILE_POINTER}
+                                ,SEND_STATE=#{SEND_STATE}, SEND_ST_DT=#{SEND_ST_DT}
+                                ,SEND_ED_DT=#{SEND_ED_DT}, SYS_DT=#{SYS_DT}
+	</insert>
+
+	<update id="updateFileSending" parameterType="HashMap">
+		UPDATE PLF_HT_FILE_TRANSFER SET
+			SEND_STATE = #{SEND_STATE},
+			SEND_ST_DT = #{SEND_ST_DT}
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+		AND FILE_NAME = #{FILE_NAME}
+	</update>
+
+	<update id="updateFileSent" parameterType="HashMap">
+		UPDATE PLF_HT_FILE_TRANSFER SET
+			SEND_STATE = #{SEND_STATE},
+			SEND_ED_DT = #{SEND_ED_DT}
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+		AND FILE_NAME = #{FILE_NAME}
+	</update>
+
+	<select id="selectFileTransfer" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.HtFileTransfer">
+		SELECT PLF_ID 		AS plfId,
+			SESSION_ID 		AS sessionId,
+			FILE_CD 		AS fileCode,
+			SYS_DT 			AS systemDateTime,
+			SEND_TYPE 		AS sendType,
+			FILE_PATH 		AS filePath,
+			FILE_NAME 		AS fileName,
+			SEND_STATE 		AS sendState,
+			SEND_ST_DT 		AS startDateTime,
+			SEND_ED_DT 		AS endDateTime
+		FROM PLF_HT_FILE_TRANSFER
+		WHERE PLF_ID = #{PLF_ID}
+		AND SESSION_ID = #{SESSION_ID}
+		AND SEND_STATE = #{SEND_STATE}
+	</select>
+
+	<select id="selectListFileTransfer" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.HtFileTransfer">
+		SELECT PLF_ID 		AS plfId,
+			SESSION_ID 		AS sessionId,
+			FILE_NAME 		AS fileName,
+			FILE_CD 		AS fileCode,
+			SEND_TYPE 		AS sendType,
+			FILE_PATH 		AS filePath,
+			SEND_STATE 		AS sendState,
+			SEND_ST_DT 		AS startDateTime,
+			SEND_ED_DT 		AS endDateTime,
+			SYS_DT 			AS systemDateTime
+		FROM PLF_HT_FILE_TRANSFER
+		WHERE PLF_ID = #{PLF_ID}
+	</select>
+
+	<select id="cancelFileTransfer" parameterType="HashMap">
+		DELETE FROM PLF_HT_FILE_TRANSFER
+		WHERE PLF_ID = #{PLF_ID}
+		<if test=" SESSION_ID != '0000000000' ">
+		AND SESSION_ID = #{SESSION_ID}
+		</if>
+		AND FILE_NAME = #{FILE_NAME}
+		AND SEND_STATE = 'READY'
+	</select>
+
+	<!-- 파라미터 -->
+	<select id="selectParameter" parameterType="HashMap" resultType="kr.tracom.platform.service.domain.MtParam">
+		SELECT APP_ID 		AS appId,
+			PARAM_KEY 		AS paramKey,
+			PARAM_VALUE 	AS paramValue,
+			REMARK 			AS remark,
+			USE_YN 			AS enable
+		FROM PLF_MT_PARAM
+		WHERE APP_ID = #{APP_ID}
+		AND PARAM_KEY = #{PARAM_KEY}
+	</select>
+
+	<select id="getParameter" parameterType="HashMap" resultType="String">
+		SELECT PARAM_VALUE 	AS paramValue
+		FROM PLF_MT_PARAM
+		WHERE APP_ID = #{APP_ID}
+		AND PARAM_KEY = #{PARAM_KEY}
+	</select>
+	
+	<!-- 191015 JH -->
+	<select id="selectImpId" resultType="String">
+	    SELECT
+	    	SESSION_ID
+	    FROM
+	    	PLF_IT_SESSION
+	</select>
+
+</mapper>

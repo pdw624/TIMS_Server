@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>::::: T-Platform IMP Management :::::</title>
+
+<script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/asset/js/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/datagrid-filter.js"></script>
+<script type="text/javascript" src="/asset/js/tplatform.js"></script>
+<script type="text/javascript">
+window.session = { name: null, token: null };
+
+var IMP_PROCESS_LIST = 102;
+
+$(function() {
+    var cookie = readCookie("T-PLATFORM");
+
+    if(cookie) {
+        window.session = JSON.parse(cookie);
+        refreshSession();
+        setTimeout("updateSession()", 5000);
+        $('#dlgLogin').dialog('close');
+    }
+});//function
+
+var msg = new SpeechSynthesisUtterance();
+
+function ttsTest(){
+	msg = new SpeechSynthesisUtterance('Hello World');
+	console.log(msg);
+	window.speechSynthesis.speak(msg);
+}
+function ttsTest(){
+	//var msg = new SpeechSynthesisUtterance();
+	//msg.rate = 1.7; // 0.1 ~ 10      
+	//msg.pitch = 1.5; // 0 ~ 2
+	msg.rate = $('#rate').val();
+	msg.pitch = $('#pitch').val();
+	msg.text = $('#mytext').val();
+	console.log(msg);	       
+	window.speechSynthesis.speak(msg);
+}
+function setLang(langTxt){
+    msg.lang = langTxt;
+}    
+
+function getAttributeId() {
+    var value = $('#reqAttrId').combobox('getValue');
+
+    return value;
+}
+
+function cellStyler(value,row,index){
+    if (value == "-"){
+        //return 'background-color:#ffee00;color:red;';
+        return 'color:red;';
+    }
+}
+
+function rowStyler(index,row) {
+    if (row.sessionIp != "-") {
+        //return 'background-color:#6293BB;color:#fff;font-weight:bold;';
+        return 'color:#ff0;font-weight:bold;';
+    }
+}
+
+function prcsStyler(index, row){
+	//row.processName.substr(0, )
+}
+
+function getAllImp() {
+    var ids = [];
+    var rows = $('#grdSession').datagrid('getChecked');
+    for(var i=0; i<rows.length; i++) {
+        ids.push(rows[i].sessionId);
+    }
+    return ids.join(',');
+}
+
+function getConnectedImp() {
+    var ids = [];
+    var rows = $('#grdSession').datagrid('getChecked');
+    for(var i=0; i<rows.length; i++) {
+        if(rows[i].sessionIp != "-") {
+            ids.push(rows[i].sessionId);
+        }
+    }
+    return ids.join(',');
+}
+
+function powerReset(attrId) {
+    var ids = getConnectedImp();
+
+    if(ids.length == 0) {
+        $.messager.alert('Error', 'Please select connected IMP');
+        return;
+    }
+
+    jsonCall("/imp/reset?ids=" + ids, "GET", "", function(result, json){
+		if(result) {
+		    $.messager.alert('Ok', json.ret_message);
+		} else {
+		    $.messager.alert('Error', 'Connection to server was lost');
+		}
+	});
+}
+
+function getVersion(sessionId) {
+    jsonCall("/imp/getVersion/"+sessionId, "GET", "", function(result, json){
+		if(result) {
+		    $("#grdVersion").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function getRequest(sessionId, attrId) {
+    jsonCall("/imp/getRequest/"+sessionId+"/"+attrId, "GET", "", function(result, json){
+		if(result) {
+		    $("#grdProcess").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function uploadFile() {
+    var idsValue = getAllImp();
+    var fileValue = $('input[name="file"').get(0).files[0];
+
+    if(idsValue == null || idsValue.length == 0) {
+        $.messager.alert('Error', 'Please select connected IMP');
+        return;
+    }
+    if(fileValue == null || fileValue.length == 0) {
+        $.messager.alert('Error', 'Please select file!');
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('file', fileValue);
+    formData.append('ids', idsValue);
+
+    $.ajax({
+        headers: {
+            Authorization: "Basic " + btoa(window.session.name + ":" + window.session.token)
+        },
+        url : '/imp/upload',
+        type : 'POST',
+        data : formData,
+        cache : false,
+        contentType : false,
+        processData : false,
+        success : function(data, textStatus, jqXHR) {
+            var json = JSON.parse(jqXHR.responseText);
+            $.messager.alert('Success', json.ret_message);
+
+            setTimeout("refreshTransfer()", 1000);
+        },
+        error : function(jqXHR, textStatus, errorThrown) {
+            $.messager.alert('Error', 'Connection to server was lost');
+        }
+    });
+}
+
+function refreshSession() {
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdSession").datagrid('loadData', {total:json.total, rows:json.rows});
+		}
+	});
+}
+
+//Session 업데이트
+function updateSession() {
+    var grdData = $("#grdSession").datagrid("getData");
+
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+		    var grdData = $("#grdSession").datagrid("getData").rows;
+            var newData = json.rows;
+            var grdRow, newRow;
+            var connectedCount = 0;
+
+            for (var grdKey in grdData) {
+                grdRow = grdData[grdKey];
+
+                /*
+                newRow = newData[grdKey];
+                if(grdRow.sessionId == newRow.sessionId) {
+                    if(grdRow.sessionIp != newRow.sessionIp) {
+                        grdRow.sessionIp = newRow.sessionIp;
+
+                        $('#grdSession').datagrid('refreshRow', grdKey);
+                    }
+                }
+                */
+
+                for (var newKey in newData) {
+                    newRow = newData[newKey];
+                    if(grdRow.sessionId == newRow.sessionId) {
+                        if(grdRow.sessionIp != newRow.sessionIp) {
+                            grdRow.sessionIp = newRow.sessionIp;
+
+                            //$('#grdSession').datagrid('refreshRow', grdKey);
+                        }
+                        break;
+                    }
+                }
+                if(grdRow.sessionIp != "-") {
+					connectedCount++;
+				}//if
+            }
+            var total = grdData.length;
+            viewInfo(total, connectedCount);
+			//viewInfo(json.total, connectedCount);
+            setTimeout("updateSession()", 5000);
+		}
+	});
+}
+
+function viewInfo(total, connected) {
+	$("#sessionInfo").html("갱신 시간 : " + getTimeStamp() + ", 총 : " + total + ", 접속 : " + connected);
+}
+
+function getTimeStamp() {
+	var d = new Date();
+	var s =
+	leadingZeros(d.getFullYear(), 4) + '-' +
+    leadingZeros(d.getMonth() + 1, 2) + '-' +
+    leadingZeros(d.getDate(), 2) + ' ' +
+
+    leadingZeros(d.getHours(), 2) + ':' +
+    leadingZeros(d.getMinutes(), 2) + ':' +
+    leadingZeros(d.getSeconds(), 2);
+
+	return s;
+}
+
+function leadingZeros(n, digits) {
+	var zero = '';
+	n = n.toString();
+
+	if (n.length < digits) {
+    for (i = 0; i < digits - n.length; i++)
+      zero += '0';
+	}
+	return zero + n;
+}
+
+function refreshLog() {
+    var tab = $('#logTab').tabs('getSelected');
+    var idx = $('#logTab').tabs('getTabIndex', tab);
+
+    if(idx == 0) {
+        refreshTransfer();
+    } else if(idx == 1) {
+        refreshTransaction();
+    }
+}
+
+function refreshTransfer() {
+    jsonCall("/admin/transfer", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdTransfer").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function refreshTransaction() {
+    jsonCall("/admin/transaction", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdTransaction").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function impMenu(menuId) {
+    var row = $('#grdSession').datagrid('getSelected');
+    if (row) {
+        var impId = row.sessionId;
+
+        if(menuId == 99) {
+            impAction(impId, 'disconnect');
+        }
+    } else {
+        $.messager.alert("Confirm", "Please select imp!");
+    }
+}
+
+function transferMenu(menuId) {
+    var row = $('#grdTransfer').datagrid('getSelected');
+    if (!row) {
+        $.messager.alert("Confirm", "Please select file transfer item!");
+        return;
+    }
+
+    if(menuId == 1) {
+        transferAction(row.sessionId, row.fileName);
+    } else if(menuId == 2) {
+        transferAction("0000000000", row.fileName);
+    }
+
+    setTimeout("refreshTransfer()", 1000);
+}
+
+function transactionMenu(menuId) {
+    if(menuId == 1) {
+        transactionAction("RESPONSE");
+    } else if(menuId == 2) {
+        transactionAction("ALL");
+    }
+    setTimeout("refreshTransaction()", 1000);
+}
+
+function impAction(impId, cmd) {
+    jsonCall("/admin/" + cmd + "/" + impId, "GET", "", function(result, json){
+        if(json.ret_code == 0) {
+            $.messager.alert('Error', json.ret_message);
+        } else {
+            $.messager.alert('Ok', 'Success to send');
+        }
+	});
+}
+
+function transferAction(impId, fileName) {
+    jsonCall("/admin/transfer/delete/" + impId + "/" + fileName, "GET", "", function(result, json){
+        if(json.ret_code == 0) {
+            $.messager.alert('Ok', 'Success to send');
+        	setTimeout("refreshTransfer()", 1000);
+        } else {
+            $.messager.alert('Error', json.ret_message);
+        }
+	});
+}
+
+function transactionAction(sendState) {
+	$.ajax({
+        type: "GET",
+        url: "/admin/transaction/delete/" + sendState,
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(json) {
+        	if(json.ret_code == 0) {
+        		$.messager.alert('Error', json.ret_message);
+        	} else {
+        		$.messager.alert('Ok', 'Success to send');
+        		setTimeout("refreshTransfer()", 1000);
+        	}
+        }
+    });
+}
+
+function formatIp(val, row) {
+	if(val) {
+		var tokens = val.split(':');
+		if(tokens.length == 2) {
+			return tokens[0];
+		}
+	}
+
+	return val;
+}
+
+function formatDateTime(val, row) {
+	if(val && val.length == 16) {
+		var date = val.substring(0, 4) + "-" + val.substring(4, 6) + "-" + val.substring(6, 8);
+		var time = val.substring(8, 10) + ":" + val.substring(10, 12); /* + ":" + val.substring(12, 14); */
+
+		return date + " " + time;
+	} else {
+		return val;
+	}
+}
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                createCookie('T-PLATFORM', JSON.stringify(session), 7);
+                $('#dlgLogin').dialog('close');
+
+                refreshSession();
+
+                setTimeout("updateSession()", 5000);
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+}
+
+
+</script>
+</head>
+<body>
+
+<input type = "text" id = "mytext" value = "hello world">
+<button onclick="setLang('ko-KR'); ttsTest();">Click</button>
+<br>
+rate : <input type="range"
+                id="rate"
+                value="5"
+                step="0.1"
+                min="0"
+                max="10">
+<br>
+pitch : <input type="range"
+                id="pitch"
+                value="1"
+                step="0.1"
+                min="0"
+                max="2">
+
+
+
+</body>
+</html>

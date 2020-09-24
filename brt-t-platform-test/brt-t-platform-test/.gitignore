@@ -1,0 +1,7 @@
+*.log
+*.ZIP
+*.jar
+T-Platform/resources/web/platform/mlayout.html
+T-Platform/resources/web/platform/mlayout2.html
+T-Platform/resources/web/platform/layout.html
+T-Platform/resources/web/platform/ftp(2).html

@@ -1,0 +1,28 @@
+
+<table id="grdService" class="easyui-datagrid" data-options="rownumbers:true, fitColumns:true, border: false, singleSelect: true">
+    <thead>
+    <tr>
+        <th field="id" align="center">SVC ID</th>
+        <th field="name" align="center">SVC Name</th>
+        <th field="version" align="center">Version</th>
+    </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+function reqService() {
+	jsonCall("/admin/service", "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+        		$.messager.alert('Error', 'send fail');
+        	} else {
+        		$("#grdService").datagrid('loadData', {total:json.total, rows:json.rows});
+        	}
+		} else {
+			$.messager.alert('Error', error);
+		}
+	});
+}
+
+reqService();
+</script>

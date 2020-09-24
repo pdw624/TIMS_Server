@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>::::: T-Platform IMP Management :::::</title>
+<link rel="shortcut icon" type="image/x-icon" href="/asset/img/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/black/easyui.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/icon.css">
+<link rel="stylesheet" type="text/css" href="/asset/js/easyui/themes/color.css">
+<style type="text/css">
+html, body {
+	height: 100%;
+	margin: 0px 0px 0px 0px;
+	padding: 0;
+	border: none;
+	background: #000;
+	overflow: hidden;
+}
+
+body {
+	font-family: 'Malgun Gothic', verdana, consolas
+}
+
+input {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+div#header {
+	color: #0099FF;
+	font-size: 22px;
+	font-weight: bold;
+	text-decoration: none
+}
+
+a.no-uline:link {
+	text-decoration: none
+}
+
+a.no-uline:visited {
+	text-decoration: none
+}
+
+a.no-uline:hover {
+	text-decoration: none
+}
+
+a.no-uline:active {
+	text-decoration: none
+}
+
+.modal {
+	position: fixed;
+	z-index: 999;
+	height: 100%;
+	width: 100%;
+	top: 0;
+	left: 0;
+	background-color: Black;
+	filter: alpha(opacity = 60);
+	opacity: 0.6;
+	-moz-opacity: 0.8;
+}
+
+.center {
+	z-index: 1000;
+	margin: 300px auto;
+	padding: 10px;
+	width: 130px;
+	background-color: none;
+	border-radius: 10px;
+	filter: alpha(opacity = 100);
+	opacity: 1;
+	-moz-opacity: 1;
+}
+
+.center img {
+	height: 128px;
+	width: 128px;
+}
+
+#grdSessionPanelTools div {
+	width: 80px;
+	height: 20px;
+	float: right;
+}
+
+#grdSessionPanelTools_a {
+	width: 80px;
+	height: 20px;
+	background-color: #ff8080;
+}
+
+.l-btn-text {
+	text-align: right;
+}
+/*
+.datagrid-btable, .datagrid-header-inner, .datagrid-htable {
+   width : 100%;
+}
+*/
+
+.tableContainer {
+  min-height:10px;
+  max-height:500px;
+}
+</style>
+
+<script type="text/javascript" src="/asset/js/easyui/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/asset/js/easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/js/easyui/datagrid-filter.js"></script>
+<script type="text/javascript" src="/asset/js/tplatform.js"></script>
+<script type="text/javascript">
+window.session = { name: null, token: null };
+
+var IMP_PROCESS_LIST = 102;
+
+$(function() {
+	$('#dlgCommand').dialog('close');
+    var cookie = readCookie("T-PLATFORM");
+
+    if(cookie) {
+        window.session = JSON.parse(cookie);
+        refreshSession();
+        setTimeout("updateSession()", 5000);
+        $('#dlgLogin').dialog('close');
+    }
+
+    /*
+    $.ajaxSetup({
+         beforeSend: function () { $(".modal").show(); }
+        ,complete:  function () { $(".modal").hide(); }
+    });
+    */
+
+
+    $('#upload-file').filebox({
+        onChange: function(value){
+            var fileSize = ($('input[name="file"').get(0).files[0].size/1024/1024).toFixed(2);
+            $('#fsize').text(fileSize + " MB");
+        }
+    });
+
+	$('#grdSession').datagrid({
+	    selectOnCheck: false,
+	    checkOnSelect: false,
+		onDblClickRow : function(rowIndex, rowData) {
+
+			var rowData = $('#grdSession').datagrid('getSelected');
+			
+			/* $("#pnlNo").text(rowData.sessionName + " || " + rowData.sessionId + " || " + rowData.localNumber); */
+			$("#pnlNo").text( rowData.sessionName + " - " + rowData.sessionId + " - " + rowData.localNumber);
+			/*
+            if (rowData && rowData.sessionIp != "-") {
+                var attrId = getAttributeId();
+                $('#grdProcess').datagrid('loadData', {"total":0,"rows":[]});
+                getRequest(rowData.sessionId, attrId);
+
+            }
+			*/
+			if (rowData) {
+				getVersion(rowData.sessionId);
+			}
+	    },
+	    onRowContextMenu:function(e){
+	    	e.preventDefault();
+
+	    	$('#imp_menu').menu('show', {
+				left: e.pageX,
+				top: e.pageY
+			});
+		}
+	});
+
+    var dg = $('#grdSession').datagrid();
+	dg.datagrid('enableFilter', [{
+        field:'sessionIp',
+        type:'combobox',
+        options:{
+            editable:false,
+            panelHeight:'auto',
+            data:[{value:'ALL',text:'ALL', selected : true}, {value:'.',text:'CONNECTED'}, {value: '-', text:'DISCONNECTED'}],
+            onChange:function(value, oldValue){
+                if (value == 'ALL'){
+                    dg.datagrid('removeFilterRule', 'sessionIp');
+                } else if(value == '.') {
+                    dg.datagrid('addFilterRule', {
+                        field: 'sessionIp',
+                        op: 'contains',
+                        value: value
+                    });
+                } else if(value == '-') {
+                    dg.datagrid('addFilterRule', {
+                        field: 'sessionIp',
+                        op: 'equal',
+                        value: value
+                    });
+                }
+                dg.datagrid('doFilter');
+                //updateSession();
+                refreshSession();
+            }
+        }
+     }]);
+	
+	
+ 	$('#region').combobox({
+		valueField : 'id',
+		textField : 'text',
+		url : encodeURI('../asset/json/region.json'),
+		onSelect : function(rec){
+			dg.datagrid('removeFilterRule', 'compName');
+			if(rec.id == 'All'){
+				dg.datagrid('removeFilterRule', 'localNumber');
+			}//all
+			else{
+				dg.datagrid('removeFilterRule', 'localNumber');
+				dg.datagrid('addFilterRule', {
+					field : 'localNumber',
+					op : 'contains',
+					value : rec.localNumber
+				});
+			}//else
+			dg.datagrid('doFilter');
+			refreshSession();
+			$('#community').combobox({
+				data : rec.comp_list,
+				valueField : 'comp',
+				textField : 'comp',
+				onChange:function(comp){
+					if(comp == '전체'){
+						dg.datagrid('removeFilterRule', 'compName');
+					}//if
+					else{
+						dg.datagrid('removeFilterRule', 'compName');
+						dg.datagrid('addFilterRule', {
+							field : 'compName',
+							op : 'equal',
+							value : comp
+						});
+					}				
+					dg.datagrid('doFilter');
+					refreshSession();
+				}//onchange
+			});//community
+		}
+ 	
+	});//region combobox by jh
+
+	
+	$('#grdTransfer').datagrid({
+	    selectOnCheck: false,
+	    checkOnSelect: false,
+	    onRowContextMenu:function(e){
+	    	e.preventDefault();
+
+	    	$('#transfer_menu').menu('show', {
+				left: e.pageX,
+				top: e.pageY
+			});
+		}
+	});
+
+	$('#grdTransaction').datagrid({
+	    selectOnCheck: false,
+	    checkOnSelect: false,
+	    onRowContextMenu:function(e){
+	    	e.preventDefault();
+
+	    	$('#transaction_menu').menu('show', {
+				left: e.pageX,
+				top: e.pageY
+			});
+		}
+	});
+	
+
+			
+});//function
+
+
+function getAttributeId() {
+    var value = $('#reqAttrId').combobox('getValue');
+
+    return value;
+}
+
+function cellStyler(value,row,index){
+    if (value == "-"){
+        //return 'background-color:#ffee00;color:red;';
+        return 'color:red;';
+    }
+}
+
+function rowStyler(index,row) {
+    if (row.sessionIp != "-") {
+        //return 'background-color:#6293BB;color:#fff;font-weight:bold;';
+        return 'color:#ff0;font-weight:bold;';
+    }
+}
+
+function prcsStyler(index, row){
+	//row.processName.substr(0, )
+}
+
+function getAllImp() {
+    var ids = [];
+    var rows = $('#grdSession').datagrid('getChecked');
+    for(var i=0; i<rows.length; i++) {
+        ids.push(rows[i].sessionId);
+    }
+    return ids.join(',');
+}
+
+function getConnectedImp() {
+    var ids = [];
+    var rows = $('#grdSession').datagrid('getChecked');
+    for(var i=0; i<rows.length; i++) {
+        if(rows[i].sessionIp != "-") {
+            ids.push(rows[i].sessionId);
+        }
+    }
+    return ids.join(',');
+}
+
+function powerReset(attrId) {
+    var ids = getConnectedImp();
+
+    if(ids.length == 0) {
+        $.messager.alert('Error', 'Please select connected IMP');
+        return;
+    }
+
+    jsonCall("/imp/reset?ids=" + ids, "GET", "", function(result, json){
+		if(result) {
+		    $.messager.alert('Ok', json.ret_message);
+		} else {
+		    $.messager.alert('Error', 'Connection to server was lost');
+		}
+	});
+}
+
+function getVersion(sessionId) {
+    jsonCall("/imp/getVersion/"+sessionId, "GET", "", function(result, json){
+		if(result) {
+		    $("#grdVersion").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function getRequest(sessionId, attrId) {
+    jsonCall("/imp/getRequest/"+sessionId+"/"+attrId, "GET", "", function(result, json){
+		if(result) {
+		    $("#grdProcess").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+
+
+function uploadFile() {
+    var idsValue = getAllImp();
+    var fileValue = $('input[name="file"').get(0).files[0];
+
+    if(idsValue == null || idsValue.length == 0) {
+        $.messager.alert('Error', 'Please select connected IMP');
+        return;
+    }
+    if(fileValue == null || fileValue.length == 0) {
+        $.messager.alert('Error', 'Please select file!');
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('file', fileValue);
+    formData.append('ids', idsValue);
+
+    $.ajax({
+        headers: {
+            Authorization: "Basic " + btoa(window.session.name + ":" + window.session.token)
+        },
+        url : '/imp/upload',
+        type : 'POST',
+        data : formData,
+        cache : false,
+        contentType : false,
+        processData : false,
+        success : function(data, textStatus, jqXHR) {
+            var json = JSON.parse(jqXHR.responseText);
+            $.messager.alert('Success', json.ret_message);
+
+            setTimeout("refreshTransfer()", 1000);
+        },
+        error : function(jqXHR, textStatus, errorThrown) {
+            $.messager.alert('Error', 'Connection to server was lost');
+        }
+    });
+}
+
+function refreshSession() {
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdSession").datagrid('loadData', {total:json.total, rows:json.rows});
+		}
+	});
+}
+
+//Session 업데이트
+function updateSession() {
+    var grdData = $("#grdSession").datagrid("getData");
+
+    jsonCall("/imp/getImpSession", "GET", "", function(result, json){
+		if(result) {
+		    var grdData = $("#grdSession").datagrid("getData").rows;
+            var newData = json.rows;
+            var grdRow, newRow;
+            var connectedCount = 0;
+
+            for (var grdKey in grdData) {
+                grdRow = grdData[grdKey];
+
+                /*
+                newRow = newData[grdKey];
+                if(grdRow.sessionId == newRow.sessionId) {
+                    if(grdRow.sessionIp != newRow.sessionIp) {
+                        grdRow.sessionIp = newRow.sessionIp;
+
+                        $('#grdSession').datagrid('refreshRow', grdKey);
+                    }
+                }
+                */
+
+                for (var newKey in newData) {
+                    newRow = newData[newKey];
+                    if(grdRow.sessionId == newRow.sessionId) {
+                        if(grdRow.sessionIp != newRow.sessionIp) {
+                            grdRow.sessionIp = newRow.sessionIp;
+
+                            //$('#grdSession').datagrid('refreshRow', grdKey);
+                        }
+                        break;
+                    }
+                }
+                if(grdRow.sessionIp != "-") {
+					connectedCount++;
+				}//if
+            }
+            var total = grdData.length;
+            viewInfo(total, connectedCount);
+			//viewInfo(json.total, connectedCount);
+            setTimeout("updateSession()", 5000);
+		}
+	});
+}
+
+function viewInfo(total, connected) {
+	$("#sessionInfo").html("갱신 시간 : " + getTimeStamp() + ", 총 : " + total + ", 접속 : " + connected);
+}
+
+function getTimeStamp() {
+	var d = new Date();
+	var s =
+	leadingZeros(d.getFullYear(), 4) + '-' +
+    leadingZeros(d.getMonth() + 1, 2) + '-' +
+    leadingZeros(d.getDate(), 2) + ' ' +
+
+    leadingZeros(d.getHours(), 2) + ':' +
+    leadingZeros(d.getMinutes(), 2) + ':' +
+    leadingZeros(d.getSeconds(), 2);
+
+	return s;
+}
+
+function leadingZeros(n, digits) {
+	var zero = '';
+	n = n.toString();
+
+	if (n.length < digits) {
+    for (i = 0; i < digits - n.length; i++)
+      zero += '0';
+	}
+	return zero + n;
+}
+
+function refreshLog() {
+    var tab = $('#logTab').tabs('getSelected');
+    var idx = $('#logTab').tabs('getTabIndex', tab);
+
+    if(idx == 0) {
+        refreshTransfer();
+    } else if(idx == 1) {
+        refreshTransaction();
+    }else if(idx == 2){
+    	refreshCmdLog();
+    }
+}
+
+function refreshTransfer() {
+    jsonCall("/admin/transfer", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdTransfer").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function refreshTransaction() {
+    jsonCall("/admin/transaction", "GET", "", function(result, json){
+		if(result) {
+		    $("#grdTransaction").datagrid('loadData', {total:json.total, rows:json.rows});
+		} else {
+		    $.messager.alert('Error', json.ret_message);
+		}
+	});
+}
+
+function impMenu(menuId) {
+    var row = $('#grdSession').datagrid('getSelected');
+    if (row) {
+        var impId = row.sessionId;
+
+        if(menuId == 99) {
+            impAction(impId, 'disconnect');
+        }
+    } else {
+        $.messager.alert("Confirm", "Please select imp!");
+    }
+}
+
+function transferMenu(menuId) {
+    var row = $('#grdTransfer').datagrid('getSelected');
+    if (!row) {
+        $.messager.alert("Confirm", "Please select file transfer item!");
+        return;
+    }
+
+    if(menuId == 1) {
+        transferAction(row.sessionId, row.fileName);
+    } else if(menuId == 2) {
+        transferAction("0000000000", row.fileName);
+    }
+
+    setTimeout("refreshTransfer()", 1000);
+}
+
+function transactionMenu(menuId) {
+    if(menuId == 1) {
+        transactionAction("RESPONSE");
+    } else if(menuId == 2) {
+        transactionAction("ALL");
+    }
+    setTimeout("refreshTransaction()", 1000);
+}
+
+function impAction(impId, cmd) {
+    jsonCall("/admin/" + cmd + "/" + impId, "GET", "", function(result, json){
+       	if(json.ret_code == 0) {
+            $.messager.alert('Error', json.ret_message);
+        } else {
+            $.messager.alert('Ok', 'Success to send');
+        }
+	});
+}
+
+//191015
+
+function ActionCkd(impId, cmd){
+	jsonCall("/admin/" + cmd + "/" + impId, "GET", "", function(result, json){
+       	if(json.ret_code == 0) {
+        } else {
+        }
+	});
+}
+function transferAction(impId, fileName) {
+    jsonCall("/admin/transfer/delete/" + impId + "/" + fileName, "GET", "", function(result, json){
+        if(json.ret_code == 0) {
+            $.messager.alert('Ok', 'Success to send');
+        	setTimeout("refreshTransfer()", 1000);
+        } else {
+            $.messager.alert('Error', json.ret_message);
+        }
+	});
+}
+
+function transactionAction(sendState) {
+	$.ajax({
+        type: "GET",
+        url: "/admin/transaction/delete/" + sendState,
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(json) {
+        	if(json.ret_code == 0) {
+        		$.messager.alert('Error', json.ret_message);
+        	} else {
+        		$.messager.alert('Ok', 'Success to send');
+        		setTimeout("refreshTransfer()", 1000);
+        	}
+        }
+    });
+}
+
+function formatIp(val, row) {
+	if(val) {
+		var tokens = val.split(':');
+		if(tokens.length == 2) {
+			return tokens[0];
+		}
+	}
+
+	return val;
+}
+
+function formatDateTime(val, row) {
+	if(val && val.length == 16) {
+		var date = val.substring(0, 4) + "-" + val.substring(4, 6) + "-" + val.substring(6, 8);
+		var time = val.substring(8, 10) + ":" + val.substring(10, 12); /* + ":" + val.substring(12, 14); */
+
+		return date + " " + time;
+	} else {
+		return val;
+	}
+}
+
+function sign() {
+    var loginRequest = { username: null, password: null };
+
+    loginRequest.username = $("#username").val();
+    loginRequest.password = $("#password").val();
+
+	$.ajax({
+        type: "POST",
+        url: "/auth/login",
+        data: JSON.stringify(loginRequest),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', 'Connection to server was lost');
+        },
+        success: function(session) {
+            if (session) {
+                window.session = session;
+
+                createCookie('T-PLATFORM', JSON.stringify(session), 7);
+                $('#dlgLogin').dialog('close');
+
+                refreshSession();
+
+                //setTimeout("updateSession()", 5000);
+            } else {
+        	    $.messager.alert('Error', 'Login failed');
+        	}
+        }
+    });
+}
+
+//커맨드 보내는 함수 by jh
+function cmdScript(){
+	var row = $('#grdSession').datagrid('getSelected');
+	var sessionId = row.sessionId;
+	var cmd = $('#cmdline').val();
+	jsonCall("/imp/cmdScript?sessionId=" + sessionId + "&cmd=" + cmd, "GET", "", function(result, json){
+		if(result){
+			refreshCmdLog(sessionId);
+		}else{
+			refreshCmdLog(sessionId);
+		}
+	});	
+}
+
+//191015 disconnect checked by jh
+function disconnectCkd(){
+	var rows = $('#grdSession').datagrid('getChecked');
+	for(var i=0; i<rows.length; i++){
+		ActionCkd(rows[i].sessionId, 'disconnect');
+	}
+	$.messager.alert('Action', '완료, 새로고침 해 주세요');
+}
+
+//커맨드 로그 새로고침하는 함수 by jh
+function refreshCmdLog(sessionId){
+	jsonCall("/imp/cmdLog?sessionId=" + sessionId, "GET", "", function(result, json){
+		if(result){
+			//loadData에서 \n을 <br>로 바꿔주면될것임
+			for(var i=0; i<json.total; i++){
+				json.rows[i].message = json.rows[i].message.replace(/\n/g, '<br>'); 
+			}
+			$('#grdCommand').datagrid('loadData', {total:json.total, rows:json.rows});
+			$('#grdCommand').datagrid('scrollTo', json.total-1);
+		}else{
+			console.log(result);
+		}
+	});
+
+}
+
+//getRequest보내는 함수 by jh
+function sendRequest(attrId){
+	var ids = getConnectedImp();
+	
+    if(ids.length == 0) {
+        $.messager.alert('Error', 'Please select connected IMP');
+        return;
+	}
+    else{
+    	jsonCall("/imp/getRequest?attrId=" + attrId + "&ids=" + ids, "GET", "", function(result, json){
+            if(json.ret_code == 0) {
+                $.messager.alert('Error', json.ret_message);
+            } else {
+                $.messager.alert('Ok', 'Success to send');
+            }
+    	});	
+    }
+}
+
+function cmdRefresh(){
+	var row = $('#grdSession').datagrid('getSelected');
+	var sessionId = row.sessionId;
+	refreshCmdLog(sessionId);
+}
+function cmdView(){
+	var row = $('#grdSession').datagrid('getSelected');
+	var sessionId = row.sessionId;
+	$('#cmd_impId').text(sessionId);
+	refreshCmdLog(sessionId);
+	$('#dlgCommand').dialog('open');
+}
+
+function cmdStyler(index,row) {
+    if (row.category == 'RESPONSE') {
+        return 'color:#ff0;';
+    }
+}
+</script>
+</head>
+<body>
+
+	<div id="layout_main" class="easyui-layout"
+		style="width: 100%; height: 100%;">
+		<div id="dv_main_north" data-options="region:'north'"
+			style="height: 33px; border-bottom-width: 1">
+			<div id="header" style="float: left; margin: 0px 10px 0 10px">
+				T-Platform IMP Management V-1.0</div>
+		</div>
+		<div id="dv_main_west" data-options="region:'west',split:true"
+			style="width: 693px; overflow: hidden">
+			<div class="easyui-panel" title="IMP List"
+				data-options="iconCls:'icon-ok'"
+				style="width: 100%; height: 100%; overflow: hidden">
+				<table id="grdSession" fit="true" fitColumns="true"
+					class="easyui-datagrid"
+					data-options="rownumbers:true,singleSelect:true,toolbar:'#grdSessionTools',rowStyler:rowStyler"
+					style="height: 100%; overflow: hidden">
+					<thead>
+						<tr>
+							<th data-options="field:'ck',checkbox:true"></th>
+							<th data-options="field:'sessionId', align:'center', width:100">아이디</th>
+							<th data-options="field:'sessionName', align:'center', width:100">차량번호</th>
+							<th data-options="field:'localNumber', align:'center', width:100">관리번호</th>
+							<th data-options="field:'sessionIp',align:'center', width:120" formatter="formatIp">접속 IP</th>
+							<th data-options="field:'dbVersion', align:'center', width:101">DB Ver</th>
+							<th data-options="field:'appVersion', align:'center', width:116">App Ver</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+		</div>
+		<div id="dv_main_center" data-options="region:'center'" style="overflow: hidden">
+			<div id="layout_center" class="easyui-layout" style="width: 100%; height: 100%;">		
+				<!-- imp process list -->
+				<div id="pnlInfo" title="IMP Information" data-options="region:'center', iconCls:'icon-ok'" style="width: 100%; overflow: hidden">
+					<div class = "easyui-layout" style = "width:100%; height:100%">
+						<div data-options = "region:'north'" style = "height: 35px;">
+							<div id = "pnlNo" style="font-size: 18px; font-weight : bold; padding-left: 10px; padding-top: 3px; ">
+									
+							</div>
+						</div>
+						
+						<div data-options = "region:'center'" style="">
+							<div id="tab_imp" class="easyui-tabs" style="height: 100%">
+								<div id = "list" title="Process List" >
+									<table id="grdVersion" class="easyui-datagrid" fit="true" fitColumns="true" data-options="rownumbers:true,singleSelect:true" style="">
+										<thead>
+											<tr>
+												<th	data-options="field:'processName',align:'left',width:300">Process Name</th>
+												<th data-options="field:'startTime',align:'left',width:120" formatter="formatDateTime">Start Time</th>
+												<th	data-options="field:'lastRunTime',align:'left',width:120" formatter="formatDateTime">Last Time</th>
+												<th data-options="field:'buildDate',align:'left',width:120" formatter="formatDateTime">Build Date</th>
+												<th data-options="field:'versionHigh',align:'left',width:80">Ver.High</th>
+												<th data-options="field:'versionMiddle',align:'left',width:80">Ver.Middle</th>
+												<th data-options="field:'versionLow',align:'left',width:80">Ver.Low</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div><!-- layout -->
+				</div><!-- end of center -->
+				<!-- imp process list end-->
+				<!-- IMP control start -->
+				<div id="dv_south" data-options="region:'south',title:'IMP Control',iconCls:'icon-ok',collapsible:false, tools:'#grdLogTools', split:true" style="height: 400px;">
+					<!-- 
+					<div data-options = "region : 'north'" style = "height:80px;">
+						
+					</div>
+					 -->
+					<div class="easyui-layout" style="width: 100%; height: 100%;">
+						<div data-options = "region : 'north'" style = "height:80px;">
+							<div style="margin-bottom: 10px; height: 30px; padding-top: 5px; padding-left: 5px">
+								Power Reset : <a href="#" class="easyui-linkbutton"	style="width: 100px" onclick="powerReset()">Send to IMP</a>
+							</div>
+							<div style="margin-bottom: 0px; height: 30px; padding-left: 5px">
+								<form name="ff" id="ff" action="/file/upload" method="post"	enctype="multipart/form-data">
+									File Transfer : <input class="easyui-filebox" id="upload-file" name="file" data-options="prompt:'Choose a file...'"	style="width: 300px"> <span id="fsize"> ##.## MB
+									</span><a href="#" class="easyui-linkbutton" style="width: 100px" onclick="uploadFile()">Notify to IMP</a>
+								</form>
+							</div>
+						</div>
+												
+						
+						<div data-options = "region : 'center'" style = "">
+							<div id="logTab" class="easyui-tabs" style="width: 100%; height: 100%; overflow: hidden">
+								<div id="transferTab" title="File Transfer">
+									<table id="grdTransfer" class="easyui-datagrid" fit="true" fitColumns="true" data-options="rownumbers:true,singleSelect:true" remoteSort="false" style="height: 100%; overflow: hidden">
+										<thead>
+											<tr>
+												<th data-options="field:'sessionId',align:'center',width:100,sortable:true">Session ID</th>
+												<th data-options="field:'sendState',align:'center',width:80,sortable:true">Transfer State</th>
+												<th data-options="field:'startDateTime',align:'center',width:100,sortable:true">Start Date</th>
+												<th	data-options="field:'endDateTime',align:'center',width:100,sortable:true">End	Date</th>
+												<th data-options="field:'systemDateTime',align:'center',width:100">Register	Date</th>
+												<th data-options="field:'fileName',align:'center',width:240">File Name</th>
+												<th data-options="field:'filePath',align:'center',width:100,sortable:true">Path</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+								<!-- transfertab -->
+		
+								<div id="transactionTab" title="Command Transaction">
+									<table id="grdTransaction" class="easyui-datagrid" fit="true" fitColumns="true"	data-options="rownumbers:true,singleSelect:true" style="height: 100%; overflow: hidden">
+										<thead>
+											<tr>
+												<th data-options="field:'sessionId',align:'center',width:100">Session ID</th>
+												<th	data-options="field:'payloadType',align:'center',width:100">Payload	Type</th>
+												<th	data-options="field:'attributeList',align:'center',width:100">Attr List</th>
+												<th data-options="field:'retryCount',align:'center',width:100">Retry Count</th>
+												<th data-options="field:'sendState',align:'center',width:100">Send State</th>
+												<th	data-options="field:'sendDateTime',align:'center',width:120">Send Date</th>
+												<th	data-options="field:'systemDateTime',align:'center',width:120">Register Date</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+								
+								
+							</div>
+						
+						</div>
+					</div><!-- layout -->
+				</div>	<!-- IMP Control end -->
+			</div>
+		</div><!-- 우측 div전체 end -->
+	</div><!-- main div 우측, 좌측 포함한 전체 end -->
+
+	<div id="grdSessionPanelTools">
+		<!-- <a href="javascript:void(0)" class="icon-reload" onclick="javascript:refreshSession()"></a> -->
+		<a href="javascript:void(0)" id="grdSessionPanelTools_a" class="easyui-linkbutton c3" iconCls="icon-reload"	onclick="javascript:refreshSession()"><span>새로고침</span></a>
+		<!-- <a href="javascript:void(0)" id="grdSessionPanelTools_a" class="easyui-linkbutton c3" iconCls="icon-reload" onclick="javascript:refreshSession()"><div>새로고침</div></a> -->
+	</div>
+
+	<div id="grdSessionTools">
+		<!--     <span> Attribute : </span>
+    <select class="easyui-combobox" data-options="editable:false" id="reqAttrId" name="reqAttrId" style="width:150px;">
+        <option value="102">Process List</option>
+    </select> -->
+
+		<table style="margin: 0px; padding: 0px; width: 100%;">
+			<tr>
+				<th><a href="javascript:void(0)" class="easyui-linkbutton c6" iconCls="icon-tip"> <span id="sessionInfo">갱신 중...</span>
+				</a></th>
+				<th style="text-align: right;"><a href="javascript:void(0)"	id="grdSessionPanelTools_a" class="easyui-linkbutton c3" iconCls="icon-reload" onclick="javascript:refreshSession()"> <span>새로고침</span>
+				</a></th>
+			</tr>
+		</table>
+		지역 : <input id="region" class="easyui-combobox" data-options="">
+		운수사 : <input id="community" class="easyui-combobox" data-options="">
+		<!-- valueField : 'id', textField : 'text' -->
+	</div>
+
+	<div id="grdLogTools">
+		<a href="javascript:void(0)" class="icon-reload" onclick="javascript:refreshLog()"></a>
+	</div>
+
+	<div class="modal" style="display: none">
+		<div class="center">
+			<img alt="" src="/asset/img/ajax-loader.gif" />
+		</div>
+	</div>
+
+	<div id="imp_menu" class="easyui-menu" style="width: 150px;">
+		<div data-options="iconCls:'icon-tip'">IMP Menu</div>
+		<div class="menu-sep"></div>
+		<div data-options="iconCls:'icon-cancel'" onclick="javascript:impMenu(99);">Disconnect</div>
+		<div data-options="iconCls:'icon-reload'" onclick="javascript:disconnectCkd();">discon Ckd</div>
+		<!-- <div data-options="iconCls:'icon-cancel'" onclick="javascript:disConnectAll();">Disconnect ALL</div>-->
+		<div class="menu-sep"></div>
+		<!-- <div data-options="iconCls:'icon-tip'" onclick = "javascript:sendRequest(602);">Get-Request</div>-->
+		<div data-options="iconCls:'icon-tip'" onclick = "javascript:cmdView();">Command</div>
+	</div>
+	
+
+	<div id="transfer_menu" class="easyui-menu" style="width: 150px;">
+		<div data-options="iconCls:'icon-tip'">Transfer Menu</div>
+		<div class="menu-sep"></div>
+		<div data-options="iconCls:'icon-cancel'" onclick="javascript:transferMenu(1);">Cancel(selected)</div>
+		<div data-options="iconCls:'icon-no'" onclick="javascript:transferMenu(2);">Cancel(all)</div>
+	</div>
+
+	<div id="transaction_menu" class="easyui-menu" style="width: 150px;">
+		<div data-options="iconCls:'icon-tip'">Transaction Menu</div>
+		<div class="menu-sep"></div>
+		<div data-options="iconCls:'icon-no'" onclick="javascript:transactionMenu(1);">Delete(response)</div>
+		<div data-options="iconCls:'icon-no'" onclick="javascript:transactionMenu(2);">Delete(all)</div>
+	</div>
+	
+	<div id="dlgCommand" class="easyui-dialog" title="Command" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width: 50%; height: 80%; padding: 10px; overflow: hidden">
+		<div class="easyui-layout" style="width: 100%; height: 100%;">
+			<!-- north region : 현재 선택된 IMP 정보 출력 -->
+			<div data-options = "region:'north'" style="height:50px;">
+				<div id="cmd_impId"></div>
+			</div>
+			<!-- north region end -->
+			<!-- center region : 로그출력 -->
+			<div data-options = "region:'center'" style="height:80%; weight:100%">
+				<table id="grdCommand" class="easyui-datagrid" fit="true" fitColumns="true" data-options="singleSelect:true, rowStyler:cmdStyler" style="height: 100%; overflow: hidden">
+					<thead>
+						<tr>
+							<th	data-options="field:'message',align:'left',width:700">MESSAGE</th>
+							<th data-options="field:'logDt', align:'right', width: 200">LOG_DT</th>
+							<th data-options="field:'category',align:'center'">Category</th>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<!-- center region end -->
+			<!-- south region : 커맨드 입력, 전송버튼 위치 -->
+			<div data-options = "region:'south'" style="height:30px; width:100%">
+				<input class="easyui-textbox" id="cmdline" style="width:70%;">
+				<a id="btn" href="#" class="easyui-linkbutton" style="width:50px;" onclick="javascript:cmdScript();">send</a>
+				<a id="btn" href="#" class="easyui-linkbutton" style="width:80px;" onclick="javascript:cmdRefresh();">새로고침</a>
+			</div>
+			<!-- south region end -->
+		</div>
+		
+	</div>
+
+	<div id="dlgLogin" class="easyui-dialog" title="Login" data-options="iconCls:'icon-save',modal:true, cls:'c7'" style="width: 350px; height: 230px; padding: 10px; overflow: hidden">
+		<form id="fff" name="ff" action="/auth/login" method="POST">
+			<div style="padding: 0 20px">
+				<div style="margin-bottom: 10px">
+					<input class="easyui-textbox" name="username" id="username"	data-options="prompt:'Type username',iconCls:'icon-man',required:true" style="width: 100%; height: 38px">
+				</div>
+				<div>
+					<input class="easyui-passwordbox" name="password" id="password"	data-options="prompt:'Type password',required:true"	style="width: 100%; height: 38px">
+				</div>
+				<div style="text-align: center; margin-top: 30px">
+					<a href="#" class="easyui-linkbutton" style="width: 100%; height: 40px" onclick="sign()"><span style="font-size: 16px">Login</span></a>
+				</div>
+			</div>
+		</form>
+	</div>
+
+</body>
+</html>

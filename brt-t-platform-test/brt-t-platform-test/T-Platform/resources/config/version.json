@@ -1,0 +1,12 @@
+{
+  "updateDateTime" : "20171120140044",
+  "items" : [ {
+    "appId" : "TA-BIS-01",
+    "versionName" : "MASTER",
+    "versionNumber" : "v01",
+    "filePath" : "/resources/master/TA-BIS-01/20171120140038/CMN_AL_201711100900.ZIP",
+    "fileSize" : 41076,
+    "applyDateTime" : "201711100900",
+    "updateDateTime" : "20171120140044"
+  } ]
+}

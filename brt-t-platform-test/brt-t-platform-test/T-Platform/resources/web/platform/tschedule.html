@@ -1,0 +1,30 @@
+
+<table id="grdSchedule" class="easyui-datagrid" data-options="rownumbers:true, fitColumns:true, border: false, singleSelect: true">
+    <thead>
+    <tr>
+        <th field="appId" align="center">App ID</th>
+        <th field="jobName" align="center">Job Name</th>
+        <th field="period" align="center">Period</th>
+    </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+function reqSchedule() {
+	jsonCall("/admin/schedule", "GET", null, function(result, json) {
+		if(result) {
+			if(json.ret_code == 0) {
+        		$.messager.alert('Error', 'send fail');
+        	} else {
+        		$("#grdSchedule").datagrid('loadData', {total:json.total, rows:json.rows});
+
+	            //tmrID = setTimeout(runTimer, 10 * 1000);
+        	}
+		} else {
+			$.messager.alert('Error', error);
+		}
+	});
+}
+
+reqSchedule();
+</script>

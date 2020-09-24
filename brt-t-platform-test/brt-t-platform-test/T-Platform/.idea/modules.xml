@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/T-Bis/T-Bis.iml" filepath="$PROJECT_DIR$/T-Bis/T-Bis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-Common/T-Common.iml" filepath="$PROJECT_DIR$/T-Common/T-Common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-Database/T-Database.iml" filepath="$PROJECT_DIR$/T-Database/T-Database.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-FileDB/T-FileDB.iml" filepath="$PROJECT_DIR$/T-FileDB/T-FileDB.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-ImpAdmin/T-ImpAdmin.iml" filepath="$PROJECT_DIR$/T-ImpAdmin/T-ImpAdmin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-Launcher/T-Launcher.iml" filepath="$PROJECT_DIR$/T-Launcher/T-Launcher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-OpenApi/T-OpenApi.iml" filepath="$PROJECT_DIR$/T-OpenApi/T-OpenApi.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-Platform.iml" filepath="$PROJECT_DIR$/T-Platform.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-Service/T-Service.iml" filepath="$PROJECT_DIR$/T-Service/T-Service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-TimsAttribute/T-TimsAttribute.iml" filepath="$PROJECT_DIR$/T-TimsAttribute/T-TimsAttribute.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-TimsNet/T-TimsNet.iml" filepath="$PROJECT_DIR$/T-TimsNet/T-TimsNet.iml" />
+      <module fileurl="file://$PROJECT_DIR$/T-TimsTcp/T-TimsTcp.iml" filepath="$PROJECT_DIR$/T-TimsTcp/T-TimsTcp.iml" />
+    </modules>
+  </component>
+</project>

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>kr.tracom.platform</groupId>
+		<artifactId>T-Platform</artifactId>
+		<version>1.0.0</version>
+	</parent>
+	<groupId>kr.tracom.platform.app</groupId>
+	<artifactId>T-Bis</artifactId>
+	<name>T-Bis</name>
+	<url>http://maven.apache.org</url>
+
+	<dependencies>
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Database</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Common</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsNet</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsAttribute</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsTcp</artifactId>
+		</dependency>
+				
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Service</artifactId>
+		</dependency>
+
+        <dependency>
+            <groupId>kr.tracom.platform</groupId>
+            <artifactId>T-FileDB</artifactId>
+        </dependency>
+    </dependencies>
+</project>

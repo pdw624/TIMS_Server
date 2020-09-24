@@ -1,0 +1,43 @@
+<div class="container">
+    <div class="content">
+        <!--
+        <a href="#" id="launcherOn" class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="controlLauncher('startup')">ON</a>
+        <a href="#" id="launcherOff" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="controlLauncher('shutdown')">OFF</a>
+        -->
+        <a href="#" id="launcherRestart" class="easyui-linkbutton" data-options="iconCls:'icon-reload'" onclick="controlLauncher('restart')">RESTART</a>
+    </div>
+</div>
+
+<script type="text/javascript">
+function controlLauncher(cmd) {
+	jsonCall("/admin/" + cmd, "GET", null, function(result, json) {
+		if(result) {
+			$.messager.alert('Ok', json.ret_message);
+		} else {
+			$.messager.alert('Warning', error);
+		}
+	});
+}
+
+/*
+function reqStatusLauncher() {
+	$.ajax({
+        type: "GET",
+        url: "/admin/launcherStatus",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        error: function(xReq, status, error) {
+        	$.messager.alert('Error', error);
+        },
+        success: function(json) {
+        	if(json.ret_code == 0) {
+        		$('#launcherOff').linkbutton('disable');
+        	} else {
+                $('#launcherOn').linkbutton('disable');
+        	}
+        }
+    });
+}
+reqStatusLauncher();
+*/
+</script>

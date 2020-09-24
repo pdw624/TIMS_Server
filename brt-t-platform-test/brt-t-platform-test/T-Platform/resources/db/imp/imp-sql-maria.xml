@@ -1,0 +1,181 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="Imp">
+	<insert id="insertCMDRes" parameterType="HashMap">
+	    INSERT INTO
+			IMP_HT_SCRIPT(APP_ID
+						, SESSION_ID
+		                , MESSAGE
+		                , LOG_DT
+		                , CATEGORY)
+		VALUES('TP-2017-01'
+			, #{SESSION_ID}
+		    , #{RES}
+		    , NOW()
+		    , 'RESPONSE')
+	</insert>
+	
+	<insert id="insertCMDReq" parameterType="HashMap">
+	    INSERT INTO
+			IMP_HT_SCRIPT(APP_ID
+						, SESSION_ID
+		                , MESSAGE
+		                , LOG_DT
+		                , CATEGORY)
+		VALUES('TP-2017-01'
+			, #{SESSION_ID}
+		    , #{REQ}
+		    , NOW()
+		    , 'REQUEST')
+	</insert>
+		
+	
+	<select id="selectCMDLog" parameterType="HashMap" resultType="kr.tracom.platform.imp.model.CmdLog">
+		SELECT
+			APP_ID
+		    ,SEQ
+		    ,SESSION_ID AS SESSIONID
+		    ,MESSAGE
+		    ,DATE_FORMAT(LOG_DT, '%Y-%m-%d %h:%i:%s') as LOGDT
+		    ,CATEGORY
+		FROM
+			IMP_HT_SCRIPT
+		WHERE
+			SESSION_ID=#{SESSION_ID}
+		ORDER BY SEQ ASC
+	</select>
+<!-- 	<select id="selectImpSession" parameterType="HashMap" resultType="kr.tracom.platform.imp.model.ImpSession">
+		SELECT T1.SESSION_ID AS sessionId,
+			T1.SESSION_NAME AS sessionName,
+			SUBSTRING(T1.REMOTE_TYPE, 5, 6) AS localNumber,
+			T1.SESSION_IP AS sessionIp,
+			COALESCE(SUBSTRING(T2.PRCS_NAME, 11), '-') dbVersion,
+			COALESCE(T2.BUILD_DATE, '-') AS appVersion
+		FROM (
+			SELECT SESSION_ID, SESSION_NAME, REMOTE_TYPE, SESSION_IP
+			FROM PLF_IT_SESSION
+			) T1 LEFT JOIN (
+				SELECT IMP_ID, PRCS_NAME, BUILD_DATE
+				FROM IMP_IT_VERSION
+				WHERE PRCS_NAME LIKE 'BIS_EVT_TS%'
+		) T2 ON T1.SESSION_ID = T2.IMP_ID
+		ORDER BY T1.SESSION_ID
+	</select> -->
+	
+	<select id="selectImpSession" parameterType="HashMap" resultType="kr.tracom.platform.imp.model.ImpSession">
+		SELECT A1.sessionId, A1.sessionName, A1.localNumber, A1.sessionIp ,A1.dbVersion, A1.appVersion, A2.COMP_NAME as compName 
+		FROM (SELECT T1.SESSION_ID AS sessionId, T1.SESSION_NAME AS sessionName, 
+				SUBSTRING(T1.REMOTE_TYPE, 5, 6) AS localNumber,T1.SESSION_IP AS sessionIp,
+				COALESCE(SUBSTRING(T2.PRCS_NAME, 11), '-') dbVersion,
+				COALESCE(T2.BUILD_DATE, '-') AS appVersion
+			FROM (SELECT SESSION_ID, SESSION_NAME, REMOTE_TYPE, SESSION_IP
+				FROM PLF_IT_SESSION) T1 LEFT JOIN (
+						SELECT IMP_ID, PRCS_NAME, BUILD_DATE
+						FROM IMP_IT_VERSION
+						WHERE PRCS_NAME LIKE 'BIS_EVT_TS%'
+				) T2 ON T1.SESSION_ID = T2.IMP_ID) A1 left join IMP_MT_TERMINAL A2 on A1.sessionid = A2.IMP_ID 
+		ORDER BY A1.sessionid
+	</select> <!-- COMP_NAME 추가 by jhlee -->
+				
+	<update id="insertItSession" parameterType="HashMap">
+		INSERT INTO PLF_IT_SESSION(PLF_ID, SESSION_ID, SESSION_NAME, SESSION_IP, REMOTE_TYPE, ELAPSED_TIME,
+									IN_PACKET, OUT_PACKET, LOGIN_DT, LOGOUT_DT, LAST_DT)
+			SELECT
+				#{PLF_ID} AS PLF_ID,
+				IMP_ID AS SESSION_ID,
+				IMP_NAME AS SESSION_NAME,
+				'-'	AS SESSION_IP,
+				IMP_TYPE AS REMOTE_TYPE,
+				0 	AS ELAPSED_TIME,
+				0 	AS IN_PACKET,
+				0 	AS OUT_PACKET,
+				'-'	AS LOGIN_DT,
+				'-'	AS LOGOUT_DT,
+				'-'	AS LAST_DT
+			FROM IMP_MT_TERMINAL
+	</update>
+
+	<update id="insertHtSession" parameterType="HashMap">
+		INSERT INTO IMP_HT_SESSION(REG_DT, SESSION_ID, SESSION_IP, ACTION_TYPE)
+		VALUES(#{REG_DT}, #{SESSION_ID}, #{SESSION_IP}, #{ACTION_TYPE})
+	</update>
+
+	<select id="selectHtSession1" parameterType="HashMap" resultType="kr.tracom.platform.imp.model.LogInOut">
+		SELECT T1.SESSION_ID AS sessionId,
+			T2.SESSION_NAME AS sessionName,
+			MIN(REG_DT) AS firstDate,
+			MAX(REG_DT) AS lastDate,
+			COUNT(*) dataCount
+		FROM IMP_HT_SESSION T1 INNER JOIN PLF_IT_SESSION T2 ON T1.SESSION_ID = T2.SESSION_ID
+		WHERE REG_DT BETWEEN #{ST_DT} AND #{ED_DT}
+		GROUP BY T1.SESSION_ID
+		ORDER BY T1.SESSION_ID
+	</select>
+
+	<!--<update id="insertItVersion" parameterType="HashMap">
+		MERGE INTO IMP_IT_VERSION(IMP_ID, PRCS_NAME, PRCS_INDEX, VER_HIGH, VER_MID, VER_LOW, START_DATE, LAST_DATE, BUILD_DATE, UPDATE_DATE)
+		KEY (IMP_ID, PRCS_NAME)
+		VALUES (#{IMP_ID}, #{PRCS_NAME}, #{PRCS_INDEX}, #{VER_HIGH}, #{VER_MID}, #{VER_LOW}, #{START_DATE}, #{LAST_DATE}, #{BUILD_DATE}, #{UPDATE_DATE})
+	</update>-->
+
+	<update id = "insertItVersion" parameterType="HashMap">
+	    INSERT INTO IMP_IT_VERSION(
+	    	IMP_ID
+	    	, PRCS_NAME
+	    	, PRCS_INDEX
+	    	, VER_HIGH
+	    	, VER_MID
+	    	, VER_LOW
+	    	, START_DATE
+	    	, LAST_DATE
+	    	, BUILD_DATE
+	    	, UPDATE_DATE)
+	    
+	    VALUES(
+	    	  #{IMP_ID}
+	    	, #{PRCS_NAME}
+	    	, #{PRCS_INDEX}
+	    	, #{VER_HIGH}
+	    	, #{VER_MID}
+	    	, #{VER_LOW}
+	    	, #{START_DATE}
+	    	, #{LAST_DATE}
+	    	, #{BUILD_DATE}
+	    	, #{UPDATE_DATE}
+	    )
+	    
+		ON DUPLICATE KEY UPDATE
+		PRCS_INDEX = #{PRCS_INDEX}
+		, VER_HIGH = #{VER_HIGH}
+		, VER_MID = #{VER_MID}
+		, VER_LOW = #{VER_LOW}
+		, START_DATE = #{START_DATE}
+		, LAST_DATE = #{LAST_DATE}
+		, BUILD_DATE = #{BUILD_DATE}
+		, UPDATE_DATE = #{UPDATE_DATE}
+	</update><!-- mysql에서의 merge문 수정 -->
+
+	<delete id="deleteItVersion" parameterType="HashMap">
+		DELETE FROM IMP_IT_VERSION WHERE IMP_ID = #{IMP_ID}
+	</delete>
+
+	<select id="selectItVersion" parameterType="HashMap" resultType="kr.tracom.platform.imp.model.ProcessVersion">
+		SELECT T1.IMP_ID AS impId,
+			T1.PRCS_NAME AS processName,
+			T1.PRCS_INDEX AS processIndex,
+			T2.IMP_NAME AS impName,
+			T1.VER_HIGH AS versionHigh,
+			T1.VER_MID AS versionMiddle,
+			T1.VER_LOW AS versionLow,
+			T1.START_DATE AS startTime,
+			T1.LAST_DATE AS lastRunTime,
+			T1.BUILD_DATE AS buildDate,
+			T1.UPDATE_DATE AS updateDate
+		FROM IMP_IT_VERSION T1 INNER JOIN IMP_MT_TERMINAL T2 ON T1.IMP_ID = T2.IMP_ID
+		<if test=" IMP_ID != null ">
+			WHERE T1.IMP_ID = #{IMP_ID}
+		</if>
+		ORDER BY T1.IMP_ID, T1.PRCS_INDEX
+	</select>
+</mapper>

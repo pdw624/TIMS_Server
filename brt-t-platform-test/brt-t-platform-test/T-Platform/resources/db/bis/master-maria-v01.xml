@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+<mapper namespace="BisBuilder">
+	<select id="codeGroupItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.CodeGroupItem">
+		SELECT COMMON_CODE 	AS groupCode,
+			COMMON_CODE_NAME 	AS groupName1,
+			COMMON_CODE_ENAME 	AS groupName2
+		FROM BIS_CT_COMMON_CODE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="codeDetailItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.CodeDetailItem">
+		SELECT COMMON_CODE 	AS groupCode,
+			DETAIL_CODE 	AS detailCode,
+			DETAIL_CODE_NAME 	AS detailName1,
+			DETAIL_CODE_ENAME 	AS detailName2
+		FROM BIS_CT_DETAIL_CODE
+		WHERE USE_YN='Y'
+		ORDER BY COMMON_CODE, SEQUENCE
+	</select>
+
+	<select id="busItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.BusItem">
+		SELECT T1.VEHICLE_ID 	AS busId,
+			T1.VEHICLE_TYPE		AS busType,
+			T2.TERMINAL_ID 		AS impId,
+			T2.TERMINAL_TYPE 	AS impType,
+			T1.PLATE_NUMBER 	AS plateNumber
+		FROM BIS_MT_VEHICLE T1
+		INNER JOIN BIS_MT_TERMINAL T2 ON T1.VEHICLE_ID = T2.VEHICLE_ID
+		WHERE T1.USE_YN = 'Y'
+		AND T2.USE_YN = 'Y'
+	</select>
+
+	<select id="bitItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.BitItem">
+		SELECT T1.STATION_ID 	AS stationId,
+			T1.STATION_NAME		AS stationName1,
+			T1.STATION_ENAME	AS stationName2,
+			T1.STATION_TYPE		AS stationType,
+			T3.BIT_ID 			AS bitId,
+			T3.BIT_TYPE 		AS bitType,
+			T1.NODE_ID			AS nodeId
+		FROM BIS_MT_STATION T1
+		INNER JOIN BIS_MT_BITSTATION T2 ON T1.STATION_ID = T2.STATION_ID
+		INNER JOIN BIS_MT_BIT T3 ON T2.BIT_ID = T3.BIT_ID
+		WHERE T1.USE_YN = 'Y'
+		AND T3.USE_YN = 'Y'
+	</select>
+
+	<select id="routeItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteItem1">
+		SELECT ROUTE_ID 	AS routeId,
+			ROUTE_NAME 		AS routeName1,
+			ROUTE_ENAME 	AS routeName2,
+			ROUTE_TYPE 		AS routeType,
+			ROUTE_DISTANCE 	AS routeLength,
+			RUN_TYPE 		AS runType
+		FROM BIS_MT_ROUTE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="routePlan" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteItem2">
+		SELECT ROUTE_ID 	AS routeId,
+			DAY_TYPE 		AS dayType,
+			SERVICE_COUNT 	AS serviceCount,
+			ST_FIRST_TIME 	AS startFirstTime,
+			ST_LAST_TIME 	AS startLastTime,
+			ED_FIRST_TIME 	AS endFirstTime,
+			ED_LAST_TIME 	AS endLastTime,
+			MIN_INTERVAL 	AS minInterval,
+			MAX_INTERVAL 	AS maxInterval
+		FROM BIS_MT_ROUTEPLAN
+		WHERE ROUTE_ID = #{ROUTE_ID}
+		AND USE_YN='Y'
+	</select>
+
+	<select id="stationItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.StationItem">
+		SELECT STATION_ID 	AS stationId,
+			STATION_NAME 	AS stationName1,
+			STATION_ENAME 	AS stationName2,
+			STATION_TYPE 	AS stationType,
+			GPS_Y 			AS latitude,
+			GPS_X 			AS longitude,
+			NODE_ID 		AS nodeId
+		FROM BIS_MT_STATION
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="linkItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.LinkItem">
+		SELECT LINK_ID 						AS linkId,
+			SUBSTRING(LINK_NAME, 0, 30) 	AS linkName1,
+			SUBSTRING(LINK_ENAME, 0, 30) 	AS linkName2,
+			LINK_TYPE 						AS linkType,
+			FROM_NODE_ID 					AS fromNodeId,
+			TO_NODE_ID 						AS toNodeId,
+			LINK_DISTANCE 					AS linkLength,
+			LANE_COUNT 						AS laneCount,
+			MAX_REST_SPEED 					AS maxSpeed,
+			ENTRY_ANGLE 					AS inAngle,
+			ADVANCE_ANGLE 					AS outAngle
+		FROM BIS_MT_LINK
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="nodeItem" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.NodeItem">
+		SELECT NODE_ID 			AS nodeId,
+			NODE_NAME 			AS nodeName1,
+			NODE_ENAME 			AS nodeName2,
+			NODE_TYPE 			AS nodeType,
+			GPS_Y 				AS latitude,
+			GPS_X 				AS longitude,
+			ENTRY_RECOG_RADS 	AS inRadius,
+			ADVNC_RECOG_RADS 	AS outRadius
+		FROM BIS_MT_NODE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="routeLinkItem1" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteLinkItem1">
+		SELECT ROUTE_ID		AS routeId
+		FROM BIS_MT_ROUTE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="routeLinkItem2" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteLinkItem2">
+		SELECT LINK_SEQUENCE	AS linkSeq,
+			LINK_ID 			AS linkId,
+			UPDOWN_DIR 			AS direction
+		FROM BIS_MT_ROUTELINK
+		WHERE USE_YN='Y'
+		AND ROUTE_ID = #{ROUTE_ID}
+	</select>
+
+	<select id="routeStationItem1" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteStationItem1">
+		SELECT ROUTE_ID		AS routeId
+		FROM BIS_MT_ROUTE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="routeStationItem2" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteStationItem2">
+		SELECT STATION_SEQUENCE 	AS stationSeq,
+			STATION_ID 				AS stationId,
+			UPDOWN_DIR 				AS direction
+		FROM BIS_MT_ROUTESTATION
+		WHERE USE_YN='Y'
+		AND ROUTE_ID = #{ROUTE_ID}
+	</select>
+
+	<select id="routeNodeItem1" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteNodeItem1">
+		SELECT ROUTE_ID		AS routeId
+		FROM BIS_MT_ROUTE
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="routeNodeItem2" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.RouteNodeItem2">
+		SELECT NODE_SEQUENCE 		AS nodeSeq,
+			NODE_ID					AS nodeId,
+			UPDOWN_DIR 			AS direction
+		FROM BIS_MT_ROUTENODE
+		WHERE USE_YN='Y'
+		AND ROUTE_ID = #{ROUTE_ID}
+	</select>
+
+	<select id="linkVertexItem1" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.LinkVertexItem1">
+		SELECT LINK_ID		AS linkId
+		FROM BIS_MT_LINK
+		WHERE USE_YN='Y'
+	</select>
+
+	<select id="linkVertexItem2" parameterType="HashMap" resultType="kr.tracom.platform.master.bis.v01.LinkVertexItem2">
+		SELECT VERTEX_SEQUENCE	AS vertexSeq,
+			GPS_Y 				AS latitude,
+			GPS_X 				AS longitude
+		FROM BIS_MT_LINKVERTEX
+		WHERE USE_YN='Y'
+		AND LINK_ID = #{LINK_ID}
+	</select>
+</mapper>

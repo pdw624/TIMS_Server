@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>kr.tracom.platform</groupId>
+		<artifactId>T-Platform</artifactId>
+		<version>1.0.0</version>
+	</parent>
+
+	<artifactId>T-Launcher</artifactId>
+	<name>T-Launcher</name>
+	<url>http://tracom.co.kr/</url>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>kr.tracom.platform.launcher.TLauncher</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.1</version>
+				<configuration>
+					<mainClass>org.h2.tools.Console</mainClass>
+					<arguments>
+						<argument>-browser</argument>
+					</arguments>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Database</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Common</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsNet</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsAttribute</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-TimsTcp</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-FileDB</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform</groupId>
+			<artifactId>T-Service</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform.app</groupId>
+			<artifactId>T-Bis</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>kr.tracom.platform.imp</groupId>
+			<artifactId>T-ImpAdmin</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>kr.tracom.platform.brt</groupId>
+			<artifactId>T-Brt</artifactId>
+		</dependency>
+		
+		<!--Jetty dependencies start here -->
+		<dependency>
+			<groupId>org.glassfish.grizzly</groupId>
+			<artifactId>grizzly-framework</artifactId>
+			<version>2.4.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.grizzly</groupId>
+			<artifactId>grizzly-http-server</artifactId>
+			<version>2.4.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-grizzly2</artifactId>
+			<version>1.19.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.grizzly</groupId>
+			<artifactId>grizzly-websockets</artifactId>
+			<version>2.4.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-grizzly2-http</artifactId>
+			<version>2.21</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-json-jackson</artifactId>
+			<version>2.15</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-json-processing</artifactId>
+			<version>2.15</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-sse</artifactId>
+			<version>2.15</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.7.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.7.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.7.4</version>
+		</dependency>
+
+		<!--Jetty dependencies end here -->
+
+		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.5</version>
+		</dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+
+    </dependencies>
+
+</project>
