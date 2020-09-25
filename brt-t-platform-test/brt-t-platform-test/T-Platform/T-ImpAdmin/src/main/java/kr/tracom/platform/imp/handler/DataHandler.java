@@ -18,9 +18,13 @@ import kr.tracom.platform.net.protocol.TimsHeaderTypeA;
 import kr.tracom.platform.net.protocol.TimsMessage;
 import kr.tracom.platform.net.protocol.TimsMessageBuilder;
 import kr.tracom.platform.net.protocol.attribute.AtMessage;
+import kr.tracom.platform.net.protocol.payload.PlActionRequest;
+import kr.tracom.platform.net.protocol.payload.PlActionResponse;
 import kr.tracom.platform.net.protocol.payload.PlCode;
 import kr.tracom.platform.net.protocol.payload.PlGetRequest;
 import kr.tracom.platform.net.protocol.payload.PlGetResponse;
+import kr.tracom.platform.net.protocol.payload.PlSetRequest;
+import kr.tracom.platform.net.protocol.payload.PlSetResponse;
 import kr.tracom.platform.service.ServiceLauncher;
 import kr.tracom.platform.service.config.PlatformConfig;
 import kr.tracom.platform.service.dao.PlatformDao;
@@ -99,6 +103,54 @@ public class DataHandler {
             responseHeader.setReserved2(reserved2);
             
             TransactionManager.write(new TcpChannelMessage(tcpChannelMessage.getChannel(), tcpChannelMessage.getSession(), responseMessage));
+        }else if(opCode == PlCode.OP_SET_REQ) {
+        	PlSetRequest request = (PlSetRequest) timsMessage.getPayload();
+            PlSetResponse response = new PlSetResponse();
+
+            for(AtMessage attr : request.getAttrList()) {
+                if(attr.getAttrId() == AtCode.TIMESTAMP) {
+                    AtTimeStamp timeStamp = new AtTimeStamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern(PlatformConfig.PLF_DT_FORMAT)));
+
+//                    AtMessage atMessage = new AtMessage();
+//                    atMessage.setAttrId(attr);
+//                    atMessage.setAttrSize((short) timeStamp.getSize());
+//                    atMessage.setAttrData(timeStamp);
+//
+//                    response.addAttribute(atMessage);
+                    TimsMessageBuilder builder = new TimsMessageBuilder(launcher.getTimsConfig());
+                    TimsMessage responseMessage = builder.setResponse(attr.getAttrId(), (byte)0);
+                    TimsHeaderTypeA responseHeader = (TimsHeaderTypeA) responseMessage.getHeader();
+                    responseHeader.setReserved1(reserved1);
+                    responseHeader.setReserved2(reserved2);
+                    
+                    TransactionManager.write(new TcpChannelMessage(tcpChannelMessage.getChannel(), tcpChannelMessage.getSession(), responseMessage));
+                }
+            }
+        }else if(opCode == PlCode.OP_ACTION_REQ) {
+        	PlActionRequest request = (PlActionRequest) timsMessage.getPayload();
+            PlActionResponse response = new PlActionResponse();
+            AtMessage attr = request.getAtMessage();
+           
+			if (attr.getAttrId() == AtCode.TIMESTAMP) {
+				AtTimeStamp timeStamp = new AtTimeStamp(
+						LocalDateTime.now().format(DateTimeFormatter.ofPattern(PlatformConfig.PLF_DT_FORMAT)));
+
+				AtMessage atMessage = new AtMessage();
+				// atMessage.setAttrId(attr);
+				atMessage.setAttrSize((short) timeStamp.getSize());
+				atMessage.setAttrData(timeStamp);
+				// response.addAttribute(atMessage);
+
+				TimsMessageBuilder builder = new TimsMessageBuilder(launcher.getTimsConfig());
+				TimsMessage responseMessage = builder.actionResponse(timeStamp);
+				TimsHeaderTypeA responseHeader = (TimsHeaderTypeA) responseMessage.getHeader();
+				responseHeader.setReserved1(reserved1);
+				responseHeader.setReserved2(reserved2);
+
+				TransactionManager.write(new TcpChannelMessage(tcpChannelMessage.getChannel(),
+						tcpChannelMessage.getSession(), responseMessage));
+			}
+            
         }
         logger.debug(timsMessage.getLog());
     }
